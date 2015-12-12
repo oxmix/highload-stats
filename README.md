@@ -48,7 +48,7 @@ $.when(vboxVMDataMediator.getVMDetails('host')).done(function(d) {
 	targetDiv.show();
 	__vboxDisplayHostDetailsData(d, targetDiv);
 	
-	$('#vboxVMDetails').append('<iframe src="http://remote.host.io" allowtransparency frameborder="0" width="100%" height="600"></iframe>');
+	$('#vboxVMDetails').append('<iframe src="http://remote.host.io" allowtransparency frameborder="0" width="100%" height="800"></iframe>');
 	
 });
 ```
