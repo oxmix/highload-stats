@@ -1,8 +1,8 @@
 #!/usr/bin/env nodejs
 
-var port = 3838;
+var port = 3939;
 
-process.title = 'highLoad-stats';
+process.title = 'highload-stats';
 
 var debug = process.argv[2] == 'debug';
 
@@ -10,11 +10,40 @@ var crypto = require('crypto'),
 	wss = require('ws'),
 	exec = require('child_process').exec,
 	spawn = require('child_process').spawn,
-	httpServer = require('http');
+	fs = require('fs'),
+	http = require('http');
 
-var app = httpServer.createServer(function (req, res) {
-	res.writeHead(200);
-	res.end("This is highLoad-stats!\n");
+var app = http.createServer(function (req, res) {
+	var file = 'index.html';
+	req.url = req.url.replace('/highload-stats', '');
+	if (req.url == '/jquery.js') {
+		file = 'jquery.js';
+	}
+	if (req.url == '/highcharts.js') {
+		file = 'highcharts.js';
+	}
+	if (req.url == '/common.js') {
+		file = 'common.js';
+	}
+	if (req.url == '/common.css') {
+		file = 'common.css';
+	}
+
+	 if (file != '') {
+		fs.readFile(__dirname + '/../web/' + file, 'utf8', function (err, data) {
+			if (err) {
+				res.writeHead(404);
+				res.end("404 - This is highLoad-stats!\n");
+				if (debug)
+					return console.log(err);
+			}
+			res.writeHead(200);
+			res.end(data);
+		});
+	} else {
+		res.writeHead(200);
+		res.end("This is highLoad-stats!\n");
+	}
 }).listen(port);
 
 // clients
@@ -47,7 +76,12 @@ webSocketServer.on('connection', function (ws) {
 	}
 
 	ws.on('message', function (json) {
-		obj = JSON.parse(json);
+
+		try {
+			var obj = JSON.parse(json);
+		} catch (e) {
+			return log('error', 'JSON parse error - ' + e);
+		}
 
 		if (!obj || !connection[obj.id])
 			return;
@@ -93,7 +127,11 @@ webSocketServer.on('connection', function (ws) {
 	});
 
 	ws.on('close', function () {
-		delete connection[id];
+		if (connection[id]) {
+			if (typeof connection[id].socket != 'undefined')
+				connection[id].socket.terminate();
+			delete connection[id];
+		}
 		sendActiveConnection();
 		log('info', 'close – ' + id);
 	});
@@ -167,7 +205,8 @@ setInterval(function () {
 		if (connection[key].socket.readyState != 1)
 			continue;
 
-		if (connection[key].time.pong < (new Date).getTime() - 10 * 1000) {
+		if (connection[key].time.pong < (new Date).getTime() - 30 * 1000) {
+			connection[key].socket.terminate();
 			delete connection[key];
 			sendActiveConnection();
 			log('warn', 'close timeout – ' + key);
@@ -180,15 +219,28 @@ setInterval(function () {
 		}
 	}
 
-	var infoMem = '';
-	var pmu = process.memoryUsage();
-	for (s in pmu) {
-		infoMem += ' / ' + s + ': ' + Math.round(pmu[s] / 1024) + 'kb';
-	}
+	log('debug', 'quantity sent ping: ' + quantityPing);
 
-	log('info', 'quantity ping ' + quantityPing + '' + infoMem);
+}, 15000);
 
-}, 5000);
+/**
+ * Print info memory usage process
+ */
+(function () {
+	if (!debug)
+		return;
+
+	setInterval(function () {
+		var infoMem = '';
+
+		var pmu = process.memoryUsage();
+		for (var s in pmu) {
+			infoMem += ' / ' + s + ': ' + Math.round(pmu[s] / 1024) + 'kb';
+		}
+
+		log('debug', 'info memory usage: ' + infoMem);
+	}, 10000);
+}());
 
 // bandwidth stats in/out kbps
 var bandwidth = spawn('ifstat', ['-i', 'eth0', '-b']);
@@ -207,11 +259,16 @@ bandwidth.stdout.on('data', function (data) {
 var iotop = spawn('iotop', ['-k', '-q', '-o', '-d 1']);
 iotop.stdout.on('data', function (data) {
 	data = data.toString();
+	var r = data.match(/Actual DISK READ.*?([0-9]+.[0-9]+)/),
+		w = data.match(/Actual DISK WRITE.*?([0-9]+.[0-9]+)/);
+
+	if (!r || !w)
+		return;
 	send({
 		data: {
 			event: 'io-disk',
-			read: Math.round(data.match(/Actual DISK READ.*?([0-9]+.[0-9]+)/)[1] * 1024),
-			write: Math.round(data.match(/Actual DISK WRITE.*?([0-9]+.[0-9]+)/)[1] * 1024)
+			read: Math.round(r[1] * 1024),
+			write: Math.round(w[1] * 1024)
 		}
 	});
 });
@@ -227,23 +284,23 @@ memory.stdout.on('data', function (data) {
 			ram: [
 				{
 					name: 'used',
-					y: (mem[1]*100/mem[0]),
+					y: (mem[1] * 100 / mem[0]),
 					size: (mem[1] / 1024 / 1024).toFixed(2)
 				}, {
 					name: 'free',
-					y: (mem[2]*100/mem[0]),
+					y: (mem[2] * 100 / mem[0]),
 					size: (mem[2] / 1024 / 1024).toFixed(2)
 				}, {
 					name: 'shared',
-					y: (mem[3]*100/mem[0]),
+					y: (mem[3] * 100 / mem[0]),
 					size: (mem[3] / 1024 / 1024).toFixed(2)
 				}, {
 					name: 'buffers',
-					y: (mem[4]*100/mem[0]),
+					y: (mem[4] * 100 / mem[0]),
 					size: (mem[4] / 1024 / 1024).toFixed(2)
 				}, {
 					name: 'cached',
-					y: (mem[5]*100/mem[0]),
+					y: (mem[5] * 100 / mem[0]),
 					size: (mem[5] / 1024 / 1024).toFixed(2)
 				}
 			],
@@ -251,11 +308,11 @@ memory.stdout.on('data', function (data) {
 			swap: [
 				{
 					name: 'used',
-					y: (mem[7]*100/mem[6]),
+					y: (mem[7] * 100 / mem[6]),
 					size: (mem[7] / 1024 / 1024).toFixed(2)
 				}, {
 					name: 'free',
-					y: (mem[8]*100/mem[6]),
+					y: (mem[8] * 100 / mem[6]),
 					size: (mem[8] / 1024 / 1024).toFixed(2)
 				}
 			]
@@ -311,11 +368,11 @@ setInterval(function () {
 				space: [
 					{
 						name: 'used',
-						y: (space[2]*100/space[1]),
+						y: (space[2] * 100 / space[1]),
 						size: (space[2] / 1024).toFixed(2)
 					}, {
 						name: 'free',
-						y: (space[3]*100/space[1]),
+						y: (space[3] * 100 / space[1]),
 						size: (space[3] / 1024).toFixed(2)
 					}
 				]

@@ -7,8 +7,8 @@ var highLoad = (function () {
 	this.graffMax = 30;
 	this.webSocket = function () {
 		this.webSocketIndef = libWebSocket({
-			server: 'ws://' + config.host + ':' + config.port,
-			debug: config.debug,
+			server: window.location.href.replace('http', 'ws'),
+			debug: false,
 			open: function () {
 			},
 			message: function (data) {
@@ -58,12 +58,12 @@ var highLoad = (function () {
 
 				if (data.event == 'memory') {
 					chart = $('#ram').highcharts();
-					if(!chart)
+					if (!chart)
 						return false;
 					chart.series[0].setData(data.ram, true);
 
 					chart = $('#swap').highcharts();
-					if(!chart)
+					if (!chart)
 						return false;
 					chart.series[0].setData(data.swap, true);
 				}
@@ -85,7 +85,7 @@ var highLoad = (function () {
 
 				if (data.event == 'space') {
 					chart = $('#space').highcharts();
-					if(!chart)
+					if (!chart)
 						return false;
 					chart.series[0].setData(data.space, true);
 				}
@@ -269,7 +269,7 @@ $(function () {
 			tooltip: {
 				valueDecimals: 0
 			}
-		},{
+		}, {
 			name: 'in',
 			type: 'spline',
 			data: [],
