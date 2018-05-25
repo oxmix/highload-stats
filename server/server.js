@@ -246,12 +246,12 @@ setInterval(function () {
 exec("ip route ls 2>&1 | grep default | awk '{print $5}'", function (error, stdout, stderr) {
 	var bandwidth = spawn('ifstat', ['-i', stdout.trim(), '-b']);
 	bandwidth.stdout.on('data', function (data) {
-		var bw = data.toString().match(/([0-9.]+)   ([0-9.]+)/g);
+		var bw = data.toString().match(/([0-9.]+).*?([0-9.]+)\n/);
 		send({
 			data: {
 				event: 'bandwidth',
-				in: bw[0],
-				out: bw[1]
+				in: bw[1],
+				out: bw[2]
 			}
 		});
 	});
@@ -276,7 +276,7 @@ iotop.stdout.on('data', function (data) {
 });
 
 // memory
-var memory = spawn('free', ['-b', '-s 1', '-o']);
+var memory = spawn('free', ['-b', '-s 1']);
 memory.stdout.on('data', function (data) {
 	var mem = data.toString().match(/([0-9]+)/g);
 	send({
