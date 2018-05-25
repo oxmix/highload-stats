@@ -243,15 +243,17 @@ setInterval(function () {
 }());
 
 // bandwidth stats in/out kbps
-var bandwidth = spawn('ifstat', ['-i', 'eth0', '-b']);
-bandwidth.stdout.on('data', function (data) {
-	var bw = data.toString().match(/(\d+).*?(\d+)/g);
-	send({
-		data: {
-			event: 'bandwidth',
-			in: bw[0],
-			out: bw[1]
-		}
+exec("ip route ls 2>&1 | grep default | awk '{print $5}'", function (error, stdout, stderr) {
+	var bandwidth = spawn('ifstat', ['-i', stdout.trim(), '-b']);
+	bandwidth.stdout.on('data', function (data) {
+		var bw = data.toString().match(/([0-9.]+)   ([0-9.]+)/g);
+		send({
+			data: {
+				event: 'bandwidth',
+				in: bw[0],
+				out: bw[1]
+			}
+		});
 	});
 });
 

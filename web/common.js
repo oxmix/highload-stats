@@ -218,7 +218,7 @@ $(function () {
 			animation: Highcharts.svg
 		},
 		title: {
-			text: 'Bandwidth eth0'
+			text: 'Bandwidth'
 		},
 		xAxis: {
 			type: 'datetime',
