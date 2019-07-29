@@ -2,18 +2,18 @@
 Statistics server in real-time graphs.
 ![Preview](https://oxmix.net/storage/b/73/566c3e8588dc3.png)
 
-## Install for Debian/Ubuntu
+## Install for Ubuntu/Debian
 Execute in console
 ```bash
 cd /home
 git clone https://github.com/oxmix/highload-stats.git
-sudo apt-get install nodejs npm ifstat iotop
+sudo apt-get install nodejs npm ifstat iotop redis-cli
 cd ./highload-stats/server && npm install ws
 chmod +x restart.sh server.js
 ```
 
 ## Run 
-* server in console `./server/restart.sh`
+* server in console `sudo ./server/restart.sh`
 * open in browser `http://remote.host.io:3939`
 
 ## Debug 

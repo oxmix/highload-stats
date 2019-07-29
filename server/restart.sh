@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-sudo killall highLoad-stats
+sudo killall highload-stats
 sudo ./server.js > stdout.log 2>stderr.log &
