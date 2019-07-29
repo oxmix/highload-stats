@@ -4,6 +4,8 @@ var highLoad = (function () {
 	this.graffCount1 = 0;
 	this.graffCount2 = 0;
 	this.graffCount3 = 0;
+	this.graffCount4 = 0;
+	this.graffCount5 = 0;
 	this.graffMax = 30;
 	this.webSocket = function () {
 		this.webSocketIndef = libWebSocket({
@@ -14,14 +16,14 @@ var highLoad = (function () {
 			message: function (data) {
 				var chart, time;
 
-				if (data.event == 'quantity') {
+				if (data.event === 'quantity') {
 					$('#stats-connections').html(
 						'online: ' + data.quantityOnline +
 						' / connections: ' + data.quantityConnection
 					);
 				}
 
-				if (data.event == 'stats') {
+				if (data.event === 'stats') {
 					$('#stats-server').html(
 						'server stats: ' +
 						'rss ' + (data.mem.rss / 1024 / 1024).toFixed(2) + ' mb. / ' +
@@ -30,11 +32,11 @@ var highLoad = (function () {
 					);
 				}
 
-				if (data.event == 'pong') {
+				if (data.event === 'pong') {
 					$('#stats-ping-pong').html(' / ping pong: ' + ((new Date()) - data.time) + ' ms');
 				}
 
-				if (data.event == 'io-disk') {
+				if (data.event === 'io-disk') {
 					chart = $('#io-disk').highcharts();
 					if (!chart)
 						return false;
@@ -45,7 +47,7 @@ var highLoad = (function () {
 					chart.series[1].addPoint([time, Math.round(data.write)], true, (self.graffCount1 >= self.graffMax));
 				}
 
-				if (data.event == 'bandwidth') {
+				if (data.event === 'bandwidth') {
 					chart = $('#bandwidth').highcharts();
 					if (!chart)
 						return false;
@@ -56,7 +58,7 @@ var highLoad = (function () {
 					chart.series[1].addPoint([time, Math.round(data.in)], true, (self.graffCount2 >= self.graffMax));
 				}
 
-				if (data.event == 'memory') {
+				if (data.event === 'memory') {
 					chart = $('#ram').highcharts();
 					if (!chart)
 						return false;
@@ -68,7 +70,7 @@ var highLoad = (function () {
 					chart.series[0].setData(data.swap, true);
 				}
 
-				if (data.event == 'cpu') {
+				if (data.event === 'cpu') {
 					chart = $('#cpu').highcharts();
 					if (!chart) {
 						cpuHighchart(Object.keys(data.list).length);
@@ -83,11 +85,79 @@ var highLoad = (function () {
 					});
 				}
 
-				if (data.event == 'space') {
+				if (data.event === 'space') {
 					chart = $('#space').highcharts();
 					if (!chart)
 						return false;
 					chart.series[0].setData(data.space, true);
+				}
+
+				if (data.event === 'mysql') {
+					chart = $('#mysql-queries').highcharts();
+
+					if (!chart) {
+						mysqlQueriesHighchart(Object.keys(data.list['queries']));
+						return false;
+					}
+
+					time = (new Date()).getTime();
+
+					++self.graffCount4;
+					num = 0;
+					$.each(data.list['queries'], function (name, val) {
+						chart.series[num++].addPoint([time, val], true, (self.graffCount4 >= self.graffMax), true);
+					});
+				}
+
+				if (data.event === 'mysql') {
+					chart = $('#mysql-traffic').highcharts();
+
+					if (!chart) {
+						mysqlTrafficHighchart(Object.keys(data.list['traffic']));
+						return false;
+					}
+
+					time = (new Date()).getTime();
+
+					++self.graffCount4;
+					num = 0;
+					$.each(data.list['traffic'], function (name, val) {
+						chart.series[num++].addPoint([time, val], true, (self.graffCount4 >= self.graffMax), true);
+					});
+				}
+
+				if (data.event === 'redis') {
+					chart = $('#redis-queries').highcharts();
+
+					if (!chart) {
+						redisQueriesHighchart(Object.keys(data.list['queries']));
+						return false;
+					}
+
+					time = (new Date()).getTime();
+
+					++self.graffCount5;
+					num = 0;
+					$.each(data.list['queries'], function (name, val) {
+						chart.series[num++].addPoint([time, val], true, (self.graffCount5 >= self.graffMax), true);
+					});
+				}
+
+				if (data.event === 'redis') {
+					chart = $('#redis-traffic').highcharts();
+
+					if (!chart) {
+						redisTrafficHighchart(Object.keys(data.list['traffic']));
+						return false;
+					}
+
+					time = (new Date()).getTime();
+
+					++self.graffCount5;
+					num = 0;
+					$.each(data.list['traffic'], function (name, val) {
+						chart.series[num++].addPoint([time, val], true, (self.graffCount5 >= self.graffMax), true);
+					});
 				}
 			}
 		});
@@ -237,7 +307,7 @@ $(function () {
 				formatter: function () {
 					var maxElement = this.axis.max;
 					if (maxElement > 1024) {
-						return (this.value / 1024 ).toFixed(1) + ' Mbps';
+						return (this.value / 1024).toFixed(1) + ' Mbps';
 					} else {
 						return (this.value) + ' Kbps';
 					}
@@ -411,7 +481,6 @@ $(function () {
 		}]
 	});
 
-
 	// cpu
 	window.cpuHighchart = function (quantity) {
 		var series = [];
@@ -507,6 +576,260 @@ $(function () {
 			data: []
 		}]
 	});
+
+	// mysql queries
+	window.mysqlQueriesHighchart = function (structure) {
+		var series = [];
+		structure.forEach(function (name) {
+			series.push({
+				name: name,
+				data: []
+			});
+		});
+
+		new Highcharts.Chart({
+			chart: {
+				renderTo: 'mysql-queries',
+				type: 'spline',
+				marginRight: 30,
+				animation: Highcharts.svg
+			},
+			title: {
+				text: 'MySQL Queries'
+			},
+			xAxis: {
+				type: 'datetime',
+				tickPixelInterval: 150
+			},
+			yAxis: {
+				title: {
+					text: 'quantity'
+				},
+				plotLines: [{
+					value: 0,
+					width: 1,
+					color: '#808080'
+				}],
+				labels: {
+					formatter: function () {
+						return this.value;
+					}
+				},
+				min: 0,
+				tickPixelInterval: 25
+			},
+			legend: {
+				enabled: true
+			},
+			plotOptions: {
+				series: {
+					marker: {
+						enabled: false
+					},
+					states: {
+						hover: {
+							enabled: false
+						}
+					}
+				}
+			},
+			series: series
+		});
+	};
+
+	// mysql traffic
+	window.mysqlTrafficHighchart = function (structure) {
+		var series = [];
+		structure.forEach(function (name) {
+			series.push({
+				name: name,
+				data: []
+			});
+		});
+
+		new Highcharts.Chart({
+			chart: {
+				renderTo: 'mysql-traffic',
+				type: 'spline',
+				marginRight: 30,
+				animation: Highcharts.svg
+			},
+			title: {
+				text: 'MySQL Traffic'
+			},
+			xAxis: {
+				type: 'datetime',
+				tickPixelInterval: 150
+			},
+			yAxis: {
+				title: {
+					text: 'traffic in sec'
+				},
+				plotLines: [{
+					value: 0,
+					width: 1,
+					color: '#808080'
+				}],
+				labels: {
+					formatter: function () {
+						var maxElement = this.axis.max;
+						if (maxElement > 1024 * 1024) {
+							return (this.value / 1024 / 1024).toFixed(1) + ' MB/s';
+						} else if (maxElement > 1024) {
+							return (this.value / 1024).toFixed(1) + ' KB/s';
+						} else {
+							return (this.value) + ' Bytes';
+						}
+					}
+				},
+				min: 0,
+				tickPixelInterval: 25
+			},
+			legend: {
+				enabled: true
+			},
+			plotOptions: {
+				series: {
+					marker: {
+						enabled: false
+					},
+					states: {
+						hover: {
+							enabled: false
+						}
+					}
+				}
+			},
+			series: series
+		});
+	};
+
+	// redis queries
+	window.redisQueriesHighchart = function (structure) {
+		var series = [];
+		structure.forEach(function (name) {
+			series.push({
+				name: name,
+				data: []
+			});
+		});
+
+		new Highcharts.Chart({
+			chart: {
+				renderTo: 'redis-queries',
+				type: 'spline',
+				marginRight: 30,
+				animation: Highcharts.svg
+			},
+			title: {
+				text: 'Redis Queries'
+			},
+			xAxis: {
+				type: 'datetime',
+				tickPixelInterval: 150
+			},
+			yAxis: {
+				title: {
+					text: 'quantity'
+				},
+				plotLines: [{
+					value: 0,
+					width: 1,
+					color: '#808080'
+				}],
+				labels: {
+					formatter: function () {
+						return this.value;
+					}
+				},
+				min: 0,
+				tickPixelInterval: 25
+			},
+			legend: {
+				enabled: true
+			},
+			plotOptions: {
+				series: {
+					marker: {
+						enabled: false
+					},
+					states: {
+						hover: {
+							enabled: false
+						}
+					}
+				}
+			},
+			series: series
+		});
+	};
+
+	// redis traffic
+	window.redisTrafficHighchart = function (structure) {
+		var series = [];
+		structure.forEach(function (name) {
+			series.push({
+				name: name,
+				data: []
+			});
+		});
+
+		new Highcharts.Chart({
+			chart: {
+				renderTo: 'redis-traffic',
+				type: 'spline',
+				marginRight: 30,
+				animation: Highcharts.svg
+			},
+			title: {
+				text: 'Redis Traffic'
+			},
+			xAxis: {
+				type: 'datetime',
+				tickPixelInterval: 150
+			},
+			yAxis: {
+				title: {
+					text: 'traffic in sec'
+				},
+				plotLines: [{
+					value: 0,
+					width: 1,
+					color: '#808080'
+				}],
+				labels: {
+					formatter: function () {
+						var maxElement = this.axis.max;
+						if (maxElement > 1024 * 1024) {
+							return (this.value / 1024 / 1024).toFixed(1) + ' MB/s';
+						} else if (maxElement > 1024) {
+							return (this.value / 1024).toFixed(1) + ' KB/s';
+						} else {
+							return (this.value) + ' Bytes';
+						}
+					}
+				},
+				min: 0,
+				tickPixelInterval: 25
+			},
+			legend: {
+				enabled: true
+			},
+			plotOptions: {
+				series: {
+					marker: {
+						enabled: false
+					},
+					states: {
+						hover: {
+							enabled: false
+						}
+					}
+				}
+			},
+			series: series
+		});
+	};
 
 	// run
 	highLoad.webSocket();

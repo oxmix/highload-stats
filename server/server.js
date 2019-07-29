@@ -29,7 +29,7 @@ var app = http.createServer(function (req, res) {
 		file = 'common.css';
 	}
 
-	 if (file != '') {
+	if (file != '') {
 		fs.readFile(__dirname + '/../web/' + file, 'utf8', function (err, data) {
 			if (err) {
 				res.writeHead(404);
@@ -378,6 +378,98 @@ setInterval(function () {
 						size: (space[3] / 1024).toFixed(2)
 					}
 				]
+			}
+		});
+	});
+}, 1000);
+
+// mysql
+var sqlQuery = "SHOW GLOBAL STATUS WHERE Variable_name IN (" +
+	"'Bytes_received', 'Bytes_sent', 'Innodb_data_read', 'Innodb_data_written'," +
+	"'Uptime', 'Connections', 'Max_used_connections', 'Queries', 'Slow_queries'," +
+	"'Com_select', 'Com_update', 'Com_update_multi', 'Com_insert', 'Com_insert_select', 'Com_delete'," +
+	"'Com_create_table', 'Com_alter_table', 'Com_drop_table', 'Created_tmp_tables', 'Created_tmp_disk_tables');";
+var mysqlMem = {};
+setInterval(function () {
+	var mysql = spawn('mysql', ['-e', sqlQuery]);
+	mysql.stdout.on('data', function (data) {
+		var mysql = data.toString().match(/(\w+)\t(\d+)/gm);
+		var list = {
+			info: {},
+			traffic: {},
+			innodb: {},
+			queries: {}
+		};
+		mysql.forEach(function (value) {
+			var keyVal = value.split(/\t/);
+			var key = keyVal[0].toLowerCase().replace('com_', '').replace(/_/g, ' ');
+			var val = keyVal[1];
+			switch (key) {
+				case 'uptime':
+				case 'max used connections':
+					list['info'][key] = val;
+					break;
+
+				case 'bytes received':
+				case 'bytes sent':
+					list['traffic'][key] = val - mysqlMem[key] || 0;
+					mysqlMem[key] = val;
+					break;
+
+				case 'innodb data read':
+				case 'innodb data written':
+					list['innodb'][key] = val - mysqlMem[key] || 0;
+					mysqlMem[key] = val;
+					break;
+
+				default:
+					list['queries'][key] = val - mysqlMem[key] || 0;
+					mysqlMem[key] = val;
+					break;
+			}
+		});
+
+		send({
+			data: {
+				event: 'mysql',
+				list: list
+			}
+		});
+	});
+}, 1000);
+
+// Redis
+var redisMem = {};
+setInterval(function () {
+	exec("redis-cli info stats", function (error, stdout, stderr) {
+		var redis = stdout.match(/(.*?):([0-9.]+)/gm);
+		var list = {
+			queries: {},
+			traffic: {}
+		};
+		redis.forEach(function (value) {
+			var keyVal = value.split(':');
+			var key = keyVal[0].toLowerCase().replace(/_/g, ' ');
+			var val = keyVal[1];
+			switch (key) {
+				case 'total connections received':
+				case 'total commands processed':
+					list['queries'][key] = val - redisMem[key] || 0;
+					redisMem[key] = val;
+					break;
+
+				case 'total net input bytes':
+				case 'total net output bytes':
+					list['traffic'][key] = val - redisMem[key] || 0;
+					redisMem[key] = val;
+					break;
+			}
+		});
+
+		send({
+			data: {
+				event: 'redis',
+				list: list
 			}
 		});
 	});

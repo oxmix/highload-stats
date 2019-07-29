@@ -3,29 +3,34 @@ body {
 	font-size: 10px;
 	font-family: monospace;
 }
+
 .graphics > div {
 	box-sizing: border-box;
 	float: left;
-	width: 50%;
+	width: 450px;
 	height: 300px;
 	margin: 5px 0;
 	display: block;
 	content: ' ';
 }
+
 .graphics > div:nth-child(even) {
 	padding-left: 10px;
 }
+
 .graphics:after {
 	display: block;
 	content: '';
 	clear: both;
 }
+
 .info {
 	color: grey;
 	text-align: center;
 	margin: 15px;
 	height: 33px;
 }
+
 .info div {
 	margin-bottom: 5px;
 }
