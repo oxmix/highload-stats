@@ -24,11 +24,17 @@ body {
 	clear: both;
 }
 
+.graphics > div#mysql-queries,
+.graphics > div#mysql-traffic,
+.graphics > div#redis-queries {
+	display: none;
+}
+
 .info {
 	color: grey;
 	text-align: center;
 	margin: 15px;
-	height: 33px;
+	height: 60px;
 }
 
 .info div {

@@ -300,24 +300,18 @@ memory.stdout.on('data', function (data) {
 					name: 'buffers',
 					y: (mem[4] * 100 / mem[0]),
 					size: (mem[4] / 1024 / 1024).toFixed(2)
-				}, {
-					name: 'cached',
-					y: (mem[5] * 100 / mem[0]),
-					size: (mem[5] / 1024 / 1024).toFixed(2)
-				}
-			],
-			totalSwap: mem[6],
-			swap: [
+				},
 				{
-					name: 'used',
+					name: 'swap used',
 					y: (mem[7] * 100 / mem[6]),
 					size: (mem[7] / 1024 / 1024).toFixed(2)
 				}, {
-					name: 'free',
+					name: 'swap free',
 					y: (mem[8] * 100 / mem[6]),
 					size: (mem[8] / 1024 / 1024).toFixed(2)
 				}
-			]
+			],
+			totalSwap: mem[6]
 		}
 	});
 });

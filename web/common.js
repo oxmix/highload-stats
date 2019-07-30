@@ -63,11 +63,6 @@ var highLoad = (function () {
 					if (!chart)
 						return false;
 					chart.series[0].setData(data.ram, true);
-
-					chart = $('#swap').highcharts();
-					if (!chart)
-						return false;
-					chart.series[0].setData(data.swap, true);
 				}
 
 				if (data.event === 'cpu') {
@@ -96,7 +91,11 @@ var highLoad = (function () {
 					chart = $('#mysql-queries').highcharts();
 
 					if (!chart) {
-						mysqlQueriesHighchart(Object.keys(data.list['queries']));
+						var keys = Object.keys(data.list['queries']);
+						if (keys.length > 0)
+							$('#mysql-queries').show();
+
+						mysqlQueriesHighchart(keys);
 						return false;
 					}
 
@@ -113,7 +112,11 @@ var highLoad = (function () {
 					chart = $('#mysql-traffic').highcharts();
 
 					if (!chart) {
-						mysqlTrafficHighchart(Object.keys(data.list['traffic']));
+						var keys = Object.keys(data.list['traffic']);
+						if (keys.length > 0)
+							$('#mysql-traffic').show();
+
+						mysqlTrafficHighchart(keys);
 						return false;
 					}
 
@@ -130,7 +133,11 @@ var highLoad = (function () {
 					chart = $('#redis-queries').highcharts();
 
 					if (!chart) {
-						redisQueriesHighchart(Object.keys(data.list['queries']));
+						var keys = Object.keys(data.list['queries']);
+						if (keys.length > 0)
+							$('#redis-queries').show();
+
+						redisQueriesHighchart(keys);
 						return false;
 					}
 
@@ -139,23 +146,6 @@ var highLoad = (function () {
 					++self.graffCount5;
 					num = 0;
 					$.each(data.list['queries'], function (name, val) {
-						chart.series[num++].addPoint([time, val], true, (self.graffCount5 >= self.graffMax), true);
-					});
-				}
-
-				if (data.event === 'redis') {
-					chart = $('#redis-traffic').highcharts();
-
-					if (!chart) {
-						redisTrafficHighchart(Object.keys(data.list['traffic']));
-						return false;
-					}
-
-					time = (new Date()).getTime();
-
-					++self.graffCount5;
-					num = 0;
-					$.each(data.list['traffic'], function (name, val) {
 						chart.series[num++].addPoint([time, val], true, (self.graffCount5 >= self.graffMax), true);
 					});
 				}
@@ -421,7 +411,7 @@ $(function () {
 			type: 'pie'
 		},
 		title: {
-			text: 'RAM'
+			text: 'RAM + SWAP'
 		},
 		tooltip: {
 			enabled: false
@@ -441,41 +431,6 @@ $(function () {
 		},
 		series: [{
 			name: 'RAM',
-			colorByPoint: true,
-			data: []
-		}]
-	});
-
-	// swap
-	new Highcharts.Chart({
-		chart: {
-			renderTo: 'swap',
-			plotBackgroundColor: null,
-			plotBorderWidth: null,
-			plotShadow: false,
-			type: 'pie'
-		},
-		title: {
-			text: 'SWAP'
-		},
-		tooltip: {
-			enabled: false
-		},
-		plotOptions: {
-			pie: {
-				allowPointSelect: false,
-				dataLabels: {
-					enabled: true,
-					format: '{point.name}: {point.percentage:.1f} %<br> <span style="color: grey;">size: {point.size} mb.</span>'
-				},
-				size: 130,
-				legend: true,
-				innerSize: '50%',
-				showInLegend: true
-			}
-		},
-		series: [{
-			name: 'SWAP',
 			colorByPoint: true,
 			data: []
 		}]
@@ -740,73 +695,6 @@ $(function () {
 				labels: {
 					formatter: function () {
 						return this.value;
-					}
-				},
-				min: 0,
-				tickPixelInterval: 25
-			},
-			legend: {
-				enabled: true
-			},
-			plotOptions: {
-				series: {
-					marker: {
-						enabled: false
-					},
-					states: {
-						hover: {
-							enabled: false
-						}
-					}
-				}
-			},
-			series: series
-		});
-	};
-
-	// redis traffic
-	window.redisTrafficHighchart = function (structure) {
-		var series = [];
-		structure.forEach(function (name) {
-			series.push({
-				name: name,
-				data: []
-			});
-		});
-
-		new Highcharts.Chart({
-			chart: {
-				renderTo: 'redis-traffic',
-				type: 'spline',
-				marginRight: 30,
-				animation: Highcharts.svg
-			},
-			title: {
-				text: 'Redis Traffic'
-			},
-			xAxis: {
-				type: 'datetime',
-				tickPixelInterval: 150
-			},
-			yAxis: {
-				title: {
-					text: 'traffic in sec'
-				},
-				plotLines: [{
-					value: 0,
-					width: 1,
-					color: '#808080'
-				}],
-				labels: {
-					formatter: function () {
-						var maxElement = this.axis.max;
-						if (maxElement > 1024 * 1024) {
-							return (this.value / 1024 / 1024).toFixed(1) + ' MB/s';
-						} else if (maxElement > 1024) {
-							return (this.value / 1024).toFixed(1) + ' KB/s';
-						} else {
-							return (this.value) + ' Bytes';
-						}
 					}
 				},
 				min: 0,
