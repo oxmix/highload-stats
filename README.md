@@ -1,14 +1,19 @@
-# highload-stats ver. 0.2
+# highload-stats
 Statistics server in real-time graphs.
 ![Preview](https://oxmix.net/storage/b/73/566c3e8588dc3.png)
 
 ## Install for Ubuntu/Debian
 Execute in console
 ```bash
-cd /home
-git clone https://github.com/oxmix/highload-stats.git
-sudo apt-get install nodejs npm ifstat iotop redis-cli
-cd ./highload-stats/server && npm install ws
+# Get code
+cd ~ && git clone https://github.com/oxmix/highload-stats.git
+
+# Install nodejs and sysutils
+curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+sudo apt-get update && apt-get install -y nodejs ifstat iotop redis-cli
+
+# Install npms
+cd ~/highload-stats/server && npm install ws
 chmod +x restart.sh server.js
 ```
 

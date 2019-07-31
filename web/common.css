@@ -37,6 +37,14 @@ body {
 	height: 60px;
 }
 
+.info a {
+	color: grey;
+}
+
+.info a:hover {
+	text-decoration: none;
+}
+
 .info div {
 	margin-bottom: 5px;
 }
