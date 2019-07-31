@@ -10,7 +10,7 @@ cd ~ && git clone https://github.com/oxmix/highload-stats.git
 
 # Install nodejs and sysutils
 curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
-sudo apt-get update && apt-get install -y nodejs ifstat iotop redis-cli
+sudo apt-get update && sudo apt-get install -y nodejs ifstat iotop redis-cli
 
 # Install npms
 cd ~/highload-stats/server && npm install ws
