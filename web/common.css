@@ -37,7 +37,8 @@ body {
 	height: 60px;
 }
 
-.info a {
+.info a,
+.info a:visited {
 	color: grey;
 }
 
