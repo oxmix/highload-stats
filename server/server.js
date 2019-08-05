@@ -518,6 +518,7 @@ var telemetry = function () {
 
 	// disks
 	if (telemetryData['disks'] === '') {
+		telemetryData['disks'] = '...';
 		exec('php ' + __dirname + '/disks.php', function (error, stdout, stderr) {
 			telemetryData['disks'] = stdout;
 		});
