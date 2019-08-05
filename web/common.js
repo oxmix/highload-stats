@@ -62,6 +62,11 @@ var highLoad = (function () {
 					chart = $('#ram').highcharts();
 					if (!chart)
 						return false;
+
+					chart.setTitle({
+						text: 'Ram ' + Math.ceil(data.totalRam / 1024 / 1024) + ' GB'
+						+ ' + Swap ' + Math.ceil(data.totalSwap / 1024 / 1024) + ' GB'
+					});
 					chart.series[0].setData(data.ram, true);
 				}
 
@@ -411,7 +416,7 @@ $(function () {
 			type: 'pie'
 		},
 		title: {
-			text: 'RAM + SWAP'
+			text: 'Ram ... GB + Swap ... GB'
 		},
 		tooltip: {
 			enabled: false
@@ -421,7 +426,7 @@ $(function () {
 				allowPointSelect: false,
 				dataLabels: {
 					enabled: true,
-					format: '{point.name}: {point.percentage:.1f} %<br> <span style="color: grey;">size: {point.size} mb.</span>'
+					format: '{point.name}: {point.percentage:.1f} %<br> <span style="color: grey;">size: {point.size} GB</span>'
 				},
 				size: 130,
 				legend: true,
@@ -517,7 +522,7 @@ $(function () {
 				allowPointSelect: false,
 				dataLabels: {
 					enabled: true,
-					format: '{point.name}: {point.percentage:.1f} %<br> <span style="color: grey;">size: {point.size} gb.</span>'
+					format: '{point.name}: {point.percentage:.1f} %<br> <span style="color: grey;">size: {point.size} GB</span>'
 				},
 				size: 130,
 				legend: true,

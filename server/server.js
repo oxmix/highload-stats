@@ -311,45 +311,65 @@ iotop.stdout.on('data', function (data) {
 });
 
 // memory
-var memory = spawn('free', ['-b', '-s 1']);
-memory.stdout.on('data', function (data) {
-	var mem = data.toString().match(/([0-9]+)/g);
-	send({
-		data: {
-			event: 'memory',
-			totalRam: mem[0],
-			ram: [
-				{
-					name: 'used',
-					y: (mem[1] * 100 / mem[0]),
-					size: (mem[1] / 1024 / 1024).toFixed(2)
-				}, {
-					name: 'free',
-					y: (mem[2] * 100 / mem[0]),
-					size: (mem[2] / 1024 / 1024).toFixed(2)
-				}, {
-					name: 'shared',
-					y: (mem[3] * 100 / mem[0]),
-					size: (mem[3] / 1024 / 1024).toFixed(2)
-				}, {
-					name: 'buffers',
-					y: (mem[4] * 100 / mem[0]),
-					size: (mem[4] / 1024 / 1024).toFixed(2)
-				},
-				{
-					name: 'swap used',
-					y: (mem[7] * 100 / mem[6]),
-					size: (mem[7] / 1024 / 1024).toFixed(2)
-				}, {
-					name: 'swap free',
-					y: (mem[8] * 100 / mem[6]),
-					size: (mem[8] / 1024 / 1024).toFixed(2)
-				}
-			],
-			totalSwap: mem[6]
+setInterval(function () {
+	exec('cat /proc/meminfo', function (error, stdout, stderr) {
+		var regex = /(.*?):.*?([0-9]+)/g;
+		var mem = {};
+		var m;
+		while ((m = regex.exec(stdout)) !== null) {
+			if (m[1] === 'MemTotal' || m[1] === 'MemFree' || m[1] === 'Buffers' || m[1] === 'Cached'
+				|| m[1] === 'Slab' || m[1] === 'Shmem' || m[1] === 'SwapTotal' || m[1] === 'SwapFree') {
+				mem[m[1]] = m[2];
+			}
 		}
+		mem['Used'] = mem['MemTotal'] - mem['MemFree'] - mem['Buffers'] - mem['Cached'] - mem['Slab'];
+		mem['SwapUsed'] = mem['SwapTotal'] - mem['SwapFree'];
+		mem['Total'] = mem['MemTotal'] - mem['SwapTotal'];
+
+		send({
+			data: {
+				event: 'memory',
+				totalRam: mem['MemTotal'],
+				totalSwap: mem['SwapTotal'],
+				ram: [
+					{
+						name: 'used',
+						y: (mem['Used'] * 100 / mem['Total']),
+						size: (mem['Used'] / 1024 / 1024).toFixed(2)
+					}, {
+						name: 'free',
+						y: (mem['MemFree'] * 100 / mem['Total']),
+						size: (mem['MemFree'] / 1024 / 1024).toFixed(2)
+					}, {
+						name: 'shared',
+						y: (mem['Shmem'] * 100 / mem['Total']),
+						size: (mem['Shmem'] / 1024 / 1024).toFixed(2)
+					}, {
+						name: 'buffers',
+						y: (mem['Buffers'] * 100 / mem['Total']),
+						size: (mem['Buffers'] / 1024 / 1024).toFixed(2)
+					}, {
+						name: 'cached',
+						y: (mem['Cached'] * 100 / mem['Total']),
+						size: (mem['Cached'] / 1024 / 1024).toFixed(2)
+					}, {
+						name: 'slab',
+						y: (mem['Slab'] * 100 / mem['Total']),
+						size: (mem['Slab'] / 1024 / 1024).toFixed(2)
+					}, {
+						name: 'swap used',
+						y: (mem['SwapUsed'] * 100 / mem['Total']),
+						size: (mem['SwapUsed'] / 1024 / 1024).toFixed(2)
+					}, {
+						name: 'swap free',
+						y: (mem['SwapFree'] * 100 / mem['Total']),
+						size: (mem['SwapFree'] / 1024 / 1024).toFixed(2)
+					}
+				]
+			}
+		});
 	});
-});
+}, 1000);
 
 // cpu cores stat
 var cpuPrev = {};
