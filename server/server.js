@@ -324,7 +324,7 @@ setInterval(function () {
 		}
 		mem['Used'] = mem['MemTotal'] - mem['MemFree'] - mem['Buffers'] - mem['Cached'] - mem['Slab'];
 		mem['SwapUsed'] = mem['SwapTotal'] - mem['SwapFree'];
-		mem['Total'] = mem['MemTotal'] - mem['SwapTotal'];
+		mem['Total'] = mem['MemTotal'] + mem['SwapTotal'];
 
 		send({
 			data: {

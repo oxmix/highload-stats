@@ -446,7 +446,7 @@ $(function () {
 		var series = [];
 		for (var i = 1; i <= quantity; i++) {
 			series.push({
-				name: 'core ' + i,
+				name: i,
 				data: []
 			});
 		}
@@ -459,7 +459,7 @@ $(function () {
 				animation: Highcharts.svg
 			},
 			title: {
-				text: 'Load CPU cores'
+				text: 'Load CPUs'
 			},
 			xAxis: {
 				type: 'datetime',
