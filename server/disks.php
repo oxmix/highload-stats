@@ -62,6 +62,12 @@ class disksPoll {
 			$out[$disk]['smarts'] = self::parseSmart($src);
 		}
 
+		if (file_exists(__DIR__.'/.raid')) {
+			$fgc = file_get_contents(__DIR__.'/.raid');
+			list($dev, $quantity) = explode('=', $fgc, 2);
+			$out = self::cciss($smartCtl, $dev, $quantity, $out);
+		}
+
 		self::$data['out'] = $out;
 		self::$data['time'] = time();
 
