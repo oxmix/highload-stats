@@ -4,7 +4,7 @@ var port = 3939;
 
 process.title = 'highload-stats';
 
-var debug = process.argv[2] == 'debug';
+var debug = process.argv[2] === 'debug';
 
 var crypto = require('crypto'),
 	wss = require('ws'),
@@ -13,36 +13,69 @@ var crypto = require('crypto'),
 	fs = require('fs'),
 	http = require('http');
 
+var accessKey = '';
+try {
+	var accessFile = __dirname + '/.access-key';
+	if (fs.existsSync(accessFile)) {
+		fs.readFile(accessFile, 'utf8', function (err, data) {
+			accessKey = data;
+		})
+	}
+} catch (err) {
+}
+
 var app = http.createServer(function (req, res) {
-	var file = 'index.html';
-	req.url = req.url.replace('/highload-stats', '');
-	if (req.url == '/jquery.js') {
+	if (accessKey.length > 0 && req.url.indexOf(accessKey) === -1) {
+		res.writeHead(403);
+		res.end('highload-stats: 403');
+		return;
+	}
+
+	if (accessKey.length > 0)
+		req.url = req.url.replace('/highload-stats/' + accessKey, '');
+	else
+		req.url = req.url.replace('/highload-stats', '');
+
+	if (req.url === '/telemetry') {
+		var tel = telemetry();
+		res.writeHead(200);
+		res.end(Object.keys(tel).map(function (k) {
+			return tel[k]
+		}).join('--/separator/--'));
+
+		return;
+	}
+
+	var file = '';
+	if (req.url === '/')
+		file = 'index.html';
+	if (req.url === '/jquery.js') {
 		file = 'jquery.js';
 	}
-	if (req.url == '/highcharts.js') {
+	if (req.url === '/highcharts.js') {
 		file = 'highcharts.js';
 	}
-	if (req.url == '/common.js') {
+	if (req.url === '/common.js') {
 		file = 'common.js';
 	}
-	if (req.url == '/common.css') {
+	if (req.url === '/common.css') {
 		file = 'common.css';
 	}
 
-	if (file != '') {
+	if (file !== '') {
 		fs.readFile(__dirname + '/../web/' + file, 'utf8', function (err, data) {
 			if (err) {
 				res.writeHead(404);
-				res.end("404 - This is highLoad-stats!\n");
+				res.end('highload-stats: 404');
 				if (debug)
-					return console.log(err);
+					return log('error', err);
 			}
 			res.writeHead(200);
 			res.end(data);
 		});
 	} else {
-		res.writeHead(200);
-		res.end("This is highLoad-stats!\n");
+		res.writeHead(404);
+		res.end('highload-stats: 404');
 	}
 }).listen(port);
 
@@ -88,7 +121,7 @@ webSocketServer.on('connection', function (ws) {
 
 		log('msg', obj.id + ' - ' + json);
 
-		if (obj.command == 'ping')
+		if (obj.command === 'ping')
 			send({
 				data: {
 					event: 'pong',
@@ -96,7 +129,7 @@ webSocketServer.on('connection', function (ws) {
 				}
 			}, obj.id);
 
-		if (obj.command == 'everyone')
+		if (obj.command === 'everyone')
 			send({
 				data: {
 					event: obj.command,
@@ -105,7 +138,7 @@ webSocketServer.on('connection', function (ws) {
 				id: obj.id
 			});
 
-		if (obj.command == 'to')
+		if (obj.command === 'to')
 			send({
 				data: {
 					event: obj.command,
@@ -114,7 +147,7 @@ webSocketServer.on('connection', function (ws) {
 				id: obj.id
 			}, obj.id);
 
-		if (obj.command == 'stats') {
+		if (obj.command === 'stats') {
 			send({
 				data: {
 					event: obj.command,
@@ -150,7 +183,7 @@ webSocketServer.on('connection', function (ws) {
 	});
 });
 
-log('info', 'сервер запущен, порт ' + port + ' / pid ' + process.pid);
+log('info', 'WS server start, port: ' + port + ' / pid: ' + process.pid);
 
 var sendActiveConnection = function (from) {
 	var online = {},
@@ -179,7 +212,7 @@ var send = function (object, from) {
 		object.id = from;
 
 		if (typeof connection[from] != 'undefined') {
-			if (connection[from].socket.readyState != 1)
+			if (connection[from].socket.readyState !== 1)
 				return;
 
 			connection[from].time.lastSend = (new Date).getTime();
@@ -189,7 +222,7 @@ var send = function (object, from) {
 		for (var key in connection) {
 			object.id = key;
 
-			if (connection[key].socket.readyState != 1)
+			if (connection[key].socket.readyState !== 1)
 				continue;
 
 			connection[key].time.lastSend = (new Date).getTime();
@@ -202,7 +235,7 @@ var send = function (object, from) {
 setInterval(function () {
 	var quantityPing = 0;
 	for (var key in connection) {
-		if (connection[key].socket.readyState != 1)
+		if (connection[key].socket.readyState !== 1)
 			continue;
 
 		if (connection[key].time.pong < (new Date).getTime() - 30 * 1000) {
@@ -219,7 +252,7 @@ setInterval(function () {
 		}
 	}
 
-	log('debug', 'quantity sent ping: ' + quantityPing);
+	log('info', 'Quantity sent ping: ' + quantityPing);
 
 }, 15000);
 
@@ -231,14 +264,14 @@ setInterval(function () {
 		return;
 
 	setInterval(function () {
-		var infoMem = '';
+		var infoMem = [];
 
 		var pmu = process.memoryUsage();
 		for (var s in pmu) {
-			infoMem += ' / ' + s + ': ' + Math.round(pmu[s] / 1024) + 'kb';
+			infoMem.push(s + ': ' + Math.round(pmu[s] / 1024) + 'Kb');
 		}
 
-		log('debug', 'info memory usage: ' + infoMem);
+		log('info', 'Memory usage ' + infoMem.join(' / '));
 	}, 10000);
 }());
 
@@ -469,6 +502,31 @@ setInterval(function () {
 	});
 }, 1000);
 
+// telemetry
+var telemetryData = {
+	'disks': '',
+	'who': ''
+};
+setInterval(function () {
+	telemetryData['disks'] = '';
+}, 60 * 60 * 1000);
+var telemetry = function () {
+
+	// disks
+	if (telemetryData['disks'] === '') {
+		exec('php ' + __dirname + '/disks.php', function (error, stdout, stderr) {
+			telemetryData['disks'] = stdout;
+		});
+	}
+
+	// who
+	exec("tail -n 300 /var/log/auth.log | grep -i 'sshd\\[.*\\]: Accepted\\|login\\['", function (error, stdout, stderr) {
+		telemetryData['who'] = stdout;
+	});
+
+	return telemetryData;
+};
+
 /**
  * Other functions
  */
@@ -500,7 +558,7 @@ function log(type, msg) {
 			color = '\u001b[0m'
 	}
 
-	console.log(color + ' ' + type + reset + ' – ' + msg + ' – ' + (new Date()).toString());
+	console.log('[' + (new Date()).toString() + ']' + color + ' [' + type + '] ' + reset + msg);
 }
 
 if (!Object.keys) {
