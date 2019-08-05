@@ -472,6 +472,8 @@ var redisMem = {};
 setInterval(function () {
 	exec("redis-cli info stats", function (error, stdout, stderr) {
 		var redis = stdout.match(/(.*?):([0-9.]+)/gm);
+		if (!redis.isArray())
+			return;
 		var list = {
 			queries: {},
 			traffic: {}
