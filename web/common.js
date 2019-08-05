@@ -41,6 +41,9 @@ var highLoad = (function () {
 					if (!chart)
 						return false;
 
+					var io = ('000' + data.io.toString()).substring(data.io.toString().length);
+					chart.setTitle({text: 'Disks I/O: ' + io + ' %'});
+
 					time = (new Date()).getTime();
 
 					chart.series[0].addPoint([time, Math.round(data.read)], true, (++self.graffCount1 >= self.graffMax));
@@ -354,7 +357,7 @@ $(function () {
 			animation: Highcharts.svg
 		},
 		title: {
-			text: 'I/O Disk'
+			text: 'Disks I/O'
 		},
 		xAxis: {
 			type: 'datetime',

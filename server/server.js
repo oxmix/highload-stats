@@ -297,15 +297,27 @@ var iotop = spawn('iotop', ['-k', '-q', '-o', '-d 1']);
 iotop.stdout.on('data', function (data) {
 	data = data.toString();
 	var r = data.match(/Actual DISK READ.*?([0-9]+.[0-9]+)/),
-		w = data.match(/Actual DISK WRITE.*?([0-9]+.[0-9]+)/);
+		w = data.match(/Actual DISK WRITE.*?([0-9]+.[0-9]+)/),
+		io = data.match(/%.*([0-9.]+).*%/g);
 
-	if (!r || !w)
-		return;
+	var ioPer = 0;
+	if (io) {
+		ioPer = io.map(function (val) {
+			return val.replace(/ /g, '').replace(/%/g, '');
+		}).reduce(function (acc, val) {
+			return parseFloat(acc) + parseFloat(val);
+		}, 0);
+	}
+
+	if (!r) r = 0;
+	if (!w) w = 0;
+
 	send({
 		data: {
 			event: 'io-disk',
 			read: Math.round(r[1] * 1024),
-			write: Math.round(w[1] * 1024)
+			write: Math.round(w[1] * 1024),
+			io: Math.round(ioPer)
 		}
 	});
 });
@@ -409,24 +421,40 @@ setInterval(function () {
 
 // space
 setInterval(function () {
-	var space = spawn('df', ['-m', '--total']);
+	var space = spawn('df', ['-m', '--total', '--type', 'ext4']);
 	space.stdout.on('data', function (data) {
-		var space = data.toString().match(/total.*?([0-9]+).*?([0-9]+).*?([0-9]+)/);
+		var regex = /(\/dev\/|total).*?[0-9]+[0-9].*?([0-9]+).*?([0-9]+).*?% (.+)/g;
+		var total = 0;
+		var space = [];
+		var s;
+		while ((s = regex.exec(data.toString())) !== null) {
+			if (s[1] === 'total')
+				total = s[3];
+
+			if (s[1] === '/dev/') {
+				space.push([s[4], s[2], s[3]]);
+			}
+		}
+		var charts = [];
+		space.forEach(function (e) {
+			charts.push({
+				name: 'free: ' + e[0],
+				y: (e[2] * 100 / total),
+				size: (e[2] / 1024).toFixed(2)
+			});
+
+			charts.push({
+				name: 'used: ' + e[0],
+				y: (e[1] * 100 / total),
+				size: (e[1] / 1024).toFixed(2)
+			});
+		});
+
 		send({
 			data: {
 				event: 'space',
-				total: space[1],
-				space: [
-					{
-						name: 'used',
-						y: (space[2] * 100 / space[1]),
-						size: (space[2] / 1024).toFixed(2)
-					}, {
-						name: 'free',
-						y: (space[3] * 100 / space[1]),
-						size: (space[3] / 1024).toFixed(2)
-					}
-				]
+				total: total,
+				space: charts
 			}
 		});
 	});
@@ -441,7 +469,7 @@ var sqlQuery = "SHOW GLOBAL STATUS WHERE Variable_name IN (" +
 var mysqlMem = {};
 setInterval(function () {
 	var mysql = spawn('mysql', ['-e', sqlQuery]);
-	mysql.on('error', function() {
+	mysql.on('error', function () {
 		log('warn', 'Mysql client not found')
 	});
 	mysql.stdout.on('data', function (data) {
