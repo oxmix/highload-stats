@@ -18,7 +18,6 @@ try {
 	var accessFile = __dirname + '/.access-key';
 	if (fs.existsSync(accessFile)) {
 		fs.readFile(accessFile, 'utf8', function (err, data) {
-			debug('info', 'Access key detected');
 			accessKey = data.trim();
 		})
 	}
