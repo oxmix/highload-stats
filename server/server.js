@@ -421,6 +421,9 @@ var sqlQuery = "SHOW GLOBAL STATUS WHERE Variable_name IN (" +
 var mysqlMem = {};
 setInterval(function () {
 	var mysql = spawn('mysql', ['-e', sqlQuery]);
+	mysql.on('error', function() {
+		log('warn', 'Mysql client not found')
+	});
 	mysql.stdout.on('data', function (data) {
 		var mysql = data.toString().match(/(\w+)\t(\d+)/gm);
 		var list = {
