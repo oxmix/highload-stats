@@ -18,6 +18,7 @@ try {
 	var accessFile = __dirname + '/.access-key';
 	if (fs.existsSync(accessFile)) {
 		fs.readFile(accessFile, 'utf8', function (err, data) {
+			log('info', 'Access key detected');
 			accessKey = data.trim();
 		})
 	}
@@ -28,7 +29,7 @@ var app = http.createServer(function (req, res) {
 	if (accessKey.length > 0 && req.url.indexOf(accessKey) === -1) {
 		res.writeHead(403);
 		res.end('highload-stats: 403');
-		debug('warn', 'Failed check access key');
+		log('warn', 'Failed check access key');
 		return;
 	}
 

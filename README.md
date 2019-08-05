@@ -18,11 +18,11 @@ chmod +x restart.sh server.js
 ```
 
 ## Run 
-* server in console `cd ./server/ && sudo ./restart.sh`
+* server in console `cd ./server/ && ./restart.sh`
 * open in browser `http://remote.host.io:3939`
 
 ## Debug 
-* back-end - run console `./server/server.js debug`
+* back-end - run console `sudo ./server/server.js debug`
 * frond-end - `./web/external/common.js` => `debug: true`
 
 ## Proxy 
