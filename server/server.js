@@ -429,7 +429,7 @@ setInterval(function () {
 		var s;
 		while ((s = regex.exec(data.toString())) !== null) {
 			if (s[1] === 'total')
-				total = s[3];
+				total = +s[2] + +s[3];
 
 			if (s[1] === '/dev/') {
 				space.push([s[4], s[2], s[3]]);

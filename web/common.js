@@ -92,6 +92,9 @@ var highLoad = (function () {
 					chart = $('#space').highcharts();
 					if (!chart)
 						return false;
+
+					chart.setTitle({text: 'Space ' + Math.ceil(data.total / 1024 / 1024) + ' TB'});
+
 					chart.series[0].setData(data.space, true);
 				}
 
@@ -515,7 +518,7 @@ $(function () {
 			type: 'pie'
 		},
 		title: {
-			text: 'Space'
+			text: 'Space ... GB'
 		},
 		tooltip: {
 			enabled: false
