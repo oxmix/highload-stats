@@ -65,7 +65,7 @@ class disksPoll {
 		if (file_exists(__DIR__.'/.raid')) {
 			$fgc = file_get_contents(__DIR__.'/.raid');
 			list($dev, $quantity) = explode('=', $fgc, 2);
-			$out = self::cciss($smartCtl, $dev, $quantity, $out);
+			$out = self::cciss($smartCtl, $dev, trim($quantity), $out);
 		}
 
 		self::$data['out'] = $out;
