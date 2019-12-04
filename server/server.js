@@ -38,47 +38,50 @@ var app = http.createServer(function (req, res) {
 	else
 		req.url = req.url.replace('/highload-stats', '');
 
-	if (req.url === '/telemetry') {
-		var tel = telemetry();
-		res.writeHead(200);
-		res.end(Object.keys(tel).map(function (k) {
-			return tel[k]
-		}).join('--/separator/--'));
+	var routers = {
+		'/': 'web/index.html',
+		'/history': 'web/history.html',
+		'/jquery.js': 'web/jquery.js',
+		'/highcharts.js': 'web/highcharts.js',
+		'/common.js': 'web/common.js',
+		'/history.js': 'web/history.js',
+		'/common.css': 'web/common.css',
+		'/telemetry': function () {
+			var tel = telemetry();
+			return Object.keys(tel).map(function (k) {
+				return tel[k]
+			}).join('--/separator/--');
+		},
+		'/history.db': 'server/history.db'
+	};
 
+	if (!(req.url in routers)) {
+		res.writeHead(404);
+		res.end('highload-stats: 404');
 		return;
 	}
 
-	var file = '';
-	if (req.url === '/')
-		file = 'index.html';
-	if (req.url === '/jquery.js') {
-		file = 'jquery.js';
-	}
-	if (req.url === '/highcharts.js') {
-		file = 'highcharts.js';
-	}
-	if (req.url === '/common.js') {
-		file = 'common.js';
-	}
-	if (req.url === '/common.css') {
-		file = 'common.css';
+	var action = routers[req.url];
+
+	log('info', 'Router action: ' + action);
+
+	if (typeof action === 'function') {
+		res.writeHead(200);
+		res.end(action());
+		return;
 	}
 
-	if (file !== '') {
-		fs.readFile(__dirname + '/../web/' + file, 'utf8', function (err, data) {
-			if (err) {
-				res.writeHead(404);
-				res.end('highload-stats: 404');
-				if (debug)
-					return log('error', err);
-			}
-			res.writeHead(200);
-			res.end(data);
-		});
-	} else {
-		res.writeHead(404);
-		res.end('highload-stats: 404');
-	}
+	fs.readFile(__dirname + '/../' + action, 'utf8', function (err, data) {
+		if (err) {
+			res.writeHead(404);
+			res.end('highload-stats: 404');
+			if (debug)
+				return log('error', err);
+		}
+		res.writeHead(200);
+		res.end(data);
+	});
+
 }).listen(port);
 
 // clients
@@ -210,6 +213,9 @@ var sendActiveConnection = function (from) {
 };
 
 var send = function (object, from) {
+	var time = (new Date).getTime();
+	var string = JSON.stringify(object);
+
 	if (from) {
 		object.id = from;
 
@@ -217,8 +223,8 @@ var send = function (object, from) {
 			if (connection[from].socket.readyState !== 1)
 				return;
 
-			connection[from].time.lastSend = (new Date).getTime();
-			connection[from].socket.send(JSON.stringify(object));
+			connection[from].time.lastSend = time;
+			connection[from].socket.send(string);
 		}
 	} else {
 		for (var key in connection) {
@@ -227,11 +233,53 @@ var send = function (object, from) {
 			if (connection[key].socket.readyState !== 1)
 				continue;
 
-			connection[key].time.lastSend = (new Date).getTime();
-			connection[key].socket.send(JSON.stringify(object));
+			connection[key].time.lastSend = time;
+			connection[key].socket.send(string);
 		}
 	}
+
+	// save
+	if ('data' in object)
+		historySave(object.data);
 };
+
+// history 24
+var historyFile = __dirname + '/history.db';
+
+var historyEvents = [
+	'redis',
+	'io-disk',
+	'cpu',
+	'space',
+	'mysql',
+	'bandwidth',
+	'memory'
+];
+
+var historySave = function (data) {
+	if (historyEvents.indexOf(data.event) === -1)
+		return;
+
+	data.time = (new Date).getTime();
+
+	if (data.time / 1000 % 10 > 1)
+		return;
+
+	fs.appendFile(historyFile, JSON.stringify(data) + "\n",
+		function (err) {
+			if (err)
+				log('warn', 'Failed save history: ' + err);
+
+			log('info', 'Save history event: ' + data.event);
+		});
+};
+
+setInterval(function () {
+	var limitRows = 86400 * historyEvents.length / 10;
+	exec('tail -n ' + limitRows + ' ' + historyFile + ' > ' + historyFile + '.tmp');
+	exec('rm ' + historyFile + ' && mv ' + historyFile + '.tmp ' + historyFile);
+	log('info', 'Trim history file, limit rows: ' + limitRows);
+}, 15 * 60 * 1000);
 
 // ping
 setInterval(function () {
