@@ -593,25 +593,22 @@ setInterval(function () {
 						k: 'connections',
 						v: val - redisMem[key] || 0
 					});
-					redisMem[key] = val;
 					break;
 				case 'total commands processed':
 					charts['queries'].push({
 						k: 'commands',
 						v: val - redisMem[key] || 0
 					});
-					redisMem[key] = val;
 					break;
 
 				case 'total net input bytes':
 					charts['traffic']['input'] = val - redisMem[key] || 0;
-					redisMem[key] = val;
 					break;
 				case 'total net output bytes':
 					charts['traffic']['output'] = val - redisMem[key] || 0;
-					redisMem[key] = val;
 					break;
 			}
+			redisMem[key] = val;
 		});
 
 		send({
