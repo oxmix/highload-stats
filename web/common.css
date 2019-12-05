@@ -14,19 +14,15 @@ body {
 	content: ' ';
 }
 
-.graphics > div:nth-child(even) {
-	padding-left: 10px;
-}
-
 .graphics:after {
 	display: block;
 	content: '';
 	clear: both;
 }
 
-.graphics > div#mysql-queries,
-.graphics > div#mysql-traffic,
-.graphics > div#redis-queries {
+.graphics > div#mysql,
+.graphics > div#redis,
+.graphics > div#pg-bouncer {
 	display: none;
 }
 

@@ -6,7 +6,9 @@ var highLoad = (function () {
 	this.graffCount3 = 0;
 	this.graffCount4 = 0;
 	this.graffCount5 = 0;
+	this.graffCount6 = 0;
 	this.graffMax = 30;
+
 	this.webSocket = function () {
 		this.webSocketIndef = libWebSocket({
 			server: window.location.href.replace('http', 'ws'),
@@ -14,7 +16,8 @@ var highLoad = (function () {
 			open: function () {
 			},
 			message: function (data) {
-				var chart, time;
+				var chart,
+					time = (new Date()).getTime();
 
 				if (data.event === 'quantity') {
 					$('#stats-connections').html(
@@ -36,6 +39,17 @@ var highLoad = (function () {
 					$('#stats-ping-pong').html(' / ping pong: ' + ((new Date()) - data.time) + ' ms');
 				}
 
+				if (data.event === 'bandwidth') {
+					chart = $('#bandwidth').highcharts();
+					if (!chart)
+						return false;
+
+					++self.graffCount1;
+					data.charts.forEach(function (e, k) {
+						chart.series[k].addPoint([time, Math.round(e.val)], true, (self.graffCount1 >= self.graffMax));
+					});
+				}
+
 				if (data.event === 'io-disk') {
 					chart = $('#io-disk').highcharts();
 					if (!chart)
@@ -44,21 +58,10 @@ var highLoad = (function () {
 					var io = ('000' + data.io.toString()).substring(data.io.toString().length);
 					chart.setTitle({text: 'Disks I/O: ' + io + ' %'});
 
-					time = (new Date()).getTime();
-
-					chart.series[0].addPoint([time, Math.round(data.read)], true, (++self.graffCount1 >= self.graffMax));
-					chart.series[1].addPoint([time, Math.round(data.write)], true, (self.graffCount1 >= self.graffMax));
-				}
-
-				if (data.event === 'bandwidth') {
-					chart = $('#bandwidth').highcharts();
-					if (!chart)
-						return false;
-
-					time = (new Date()).getTime();
-
-					chart.series[0].addPoint([time, Math.round(data.out)], true, (++self.graffCount2 >= self.graffMax));
-					chart.series[1].addPoint([time, Math.round(data.in)], true, (self.graffCount2 >= self.graffMax));
+					++self.graffCount2
+					data.charts.forEach(function (e, k) {
+						chart.series[k].addPoint([time, Math.round(e.val)], true, (self.graffCount2 >= self.graffMax));
+					});
 				}
 
 				if (data.event === 'memory') {
@@ -68,23 +71,23 @@ var highLoad = (function () {
 
 					chart.setTitle({
 						text: 'Ram ' + Math.ceil(data.totalRam / 1024 / 1024) + ' GB'
-						+ ' + Swap ' + Math.ceil(data.totalSwap / 1024 / 1024) + ' GB'
+							+ ' + Swap ' + Math.ceil(data.totalSwap / 1024 / 1024) + ' GB'
 					});
-					chart.series[0].setData(data.ram, true);
+					chart.series[0].setData(data.charts, true);
 				}
 
 				if (data.event === 'cpu') {
 					chart = $('#cpu').highcharts();
 					if (!chart) {
-						cpuHighchart(Object.keys(data.list).length);
+						cpuHighchart(data.charts);
 						return false;
 					}
 
-					time = (new Date()).getTime();
+					chart.setTitle({text: 'Load CPUs: ' + data.avg + ' %'});
 
 					++self.graffCount3;
-					$.each(data.list, function (num, percent) {
-						chart.series[--num].addPoint([time, percent], true, (self.graffCount3 >= self.graffMax), true);
+					data.charts.forEach(function (percent, k) {
+						chart.series[k].addPoint([time, percent], true, (self.graffCount3 >= self.graffMax), true);
 					});
 				}
 
@@ -93,75 +96,75 @@ var highLoad = (function () {
 					if (!chart)
 						return false;
 
-					chart.setTitle({text: 'Space ' + Math.ceil(data.total / 1024 / 1024) + ' TB'});
+					chart.setTitle({text: 'Space: ' + Math.ceil(data.total / 1024 / 1024) + ' TB'});
 
-					chart.series[0].setData(data.space, true);
+					chart.series[0].setData(data.charts, true);
 				}
 
 				if (data.event === 'mysql') {
-					chart = $('#mysql-queries').highcharts();
+					chart = $('#mysql').highcharts();
 
 					if (!chart) {
-						var keys = Object.keys(data.list['queries']);
-						if (keys.length > 0)
-							$('#mysql-queries').show();
+						if (data.charts['queries'].length > 0)
+							$('#mysql').show();
 
-						mysqlQueriesHighchart(keys);
+						mysqlHighchart(data.charts['queries']);
 						return false;
 					}
 
-					time = (new Date()).getTime();
+					chart.setTitle({text: 'MySQL Sent: ' + self.formatter(data.charts['traffic']['bytes sent'])});
 
 					++self.graffCount4;
-					num = 0;
-					$.each(data.list['queries'], function (name, val) {
-						chart.series[num++].addPoint([time, val], true, (self.graffCount4 >= self.graffMax), true);
-					});
-				}
-
-				if (data.event === 'mysql') {
-					chart = $('#mysql-traffic').highcharts();
-
-					if (!chart) {
-						var keys = Object.keys(data.list['traffic']);
-						if (keys.length > 0)
-							$('#mysql-traffic').show();
-
-						mysqlTrafficHighchart(keys);
-						return false;
-					}
-
-					time = (new Date()).getTime();
-
-					++self.graffCount4;
-					num = 0;
-					$.each(data.list['traffic'], function (name, val) {
-						chart.series[num++].addPoint([time, val], true, (self.graffCount4 >= self.graffMax), true);
+					data.charts['queries'].forEach(function (e, k) {
+						chart.series[k].addPoint([time, e.v], true, (self.graffCount4 >= self.graffMax), true);
 					});
 				}
 
 				if (data.event === 'redis') {
-					chart = $('#redis-queries').highcharts();
+					chart = $('#redis').highcharts();
 
 					if (!chart) {
-						var keys = Object.keys(data.list['queries']);
-						if (keys.length > 0)
-							$('#redis-queries').show();
+						if (data.charts['queries'].length > 0)
+							$('#redis').show();
 
-						redisQueriesHighchart(keys);
+						redisHighchart(data.charts['queries']);
 						return false;
 					}
 
-					time = (new Date()).getTime();
+					chart.setTitle({text: 'Redis Sent: ' + self.formatter(data.charts['traffic']['output'] / 1024)});
 
 					++self.graffCount5;
-					num = 0;
-					$.each(data.list['queries'], function (name, val) {
-						chart.series[num++].addPoint([time, val], true, (self.graffCount5 >= self.graffMax), true);
+					data.charts['queries'].forEach(function (e, k) {
+						chart.series[k].addPoint([time, e.v], true, (self.graffCount5 >= self.graffMax), true);
+					});
+				}
+
+				if (data.event === 'pg-bouncer') {
+					chart = $('#pg-bouncer').highcharts();
+					if (!chart) {
+						if (data.charts.queries.length > 0)
+							$('#pg-bouncer').show();
+
+						pgBouncerHighchart(data.charts.queries);
+						return false;
+					}
+
+					chart.setTitle({text: 'PgBouncer Sent: ' + self.formatter(data.charts.sent)});
+
+					data.charts.queries.forEach(function (e, k) {
+						chart.series[k].addPoint([time, e.v], true, (++self.graffCount6 >= self.graffMax), true);
 					});
 				}
 			}
 		});
+	};
+
+	this.formatter = function (val) {
+		if (val > 1024 * 1024) {
+			return (val / 1024 / 1024).toFixed(1) + ' MB/s';
+		} else {
+			return (val / 1024).toFixed(1) + ' KB/s';
+		}
 	};
 
 	return this;
@@ -262,11 +265,14 @@ $(function () {
 		global: {
 			useUTC: false
 		},
-		colors: ["#7cb5ec", "#f7a35c", "#90ee7e", "#7798BF", "#aaeeee", "#ff0066", "#eeaaee",
-			"#55BF3B", "#DF5353", "#7798BF", "#aaeeee"],
+		colors: [
+			'#7cb5ec', '#ff9f0a', '#ff375f', '#eae',
+			'#f45b5b', '#64d2ff', '#ffd60a', '#bf5af2',
+			'#30d158', '#b381b3', '#aee', '#dddf0d'
+		],
 		tooltip: {
 			borderWidth: 0,
-			backgroundColor: 'rgba(219,219,216,0.8)',
+			backgroundColor: 'rgba(230,230,230,0.8)',
 			shadow: false
 		},
 		plotOptions: {
@@ -277,7 +283,7 @@ $(function () {
 				connectNulls: true
 			}
 		},
-		background2: '#F0F0EA'
+		background2: '#f0f0ea'
 	});
 
 	// bandwidth
@@ -333,18 +339,18 @@ $(function () {
 			}
 		},
 		series: [{
-			name: 'out',
-			data: [],
+			name: 'in',
 			type: 'spline',
-			color: 'grey',
+			data: [],
+			color: '#ff8700',
 			tooltip: {
 				valueDecimals: 0
 			}
 		}, {
-			name: 'in',
-			type: 'spline',
+			name: 'out',
 			data: [],
-			color: '#FF8700',
+			type: 'spline',
+			color: 'grey',
 			tooltip: {
 				valueDecimals: 0
 			}
@@ -405,7 +411,7 @@ $(function () {
 			name: 'write:',
 			type: 'spline',
 			data: [],
-			color: '#FF4500',
+			color: '#ff4500',
 			tooltip: {
 				valueDecimals: 0
 			}
@@ -448,14 +454,14 @@ $(function () {
 	});
 
 	// cpu
-	window.cpuHighchart = function (quantity) {
+	window.cpuHighchart = function (charts) {
 		var series = [];
-		for (var i = 1; i <= quantity; i++) {
+		charts.forEach(function (_, k) {
 			series.push({
-				name: i,
+				name: ++k,
 				data: []
 			});
-		}
+		});
 
 		new Highcharts.Chart({
 			chart: {
@@ -543,25 +549,86 @@ $(function () {
 		}]
 	});
 
-	// mysql queries
-	window.mysqlQueriesHighchart = function (structure) {
+	// mysql
+	window.mysqlHighchart = function (charts) {
 		var series = [];
-		structure.forEach(function (name) {
+		charts.forEach(function (e) {
 			series.push({
-				name: name,
+				name: e.k,
 				data: []
 			});
 		});
 
 		new Highcharts.Chart({
 			chart: {
-				renderTo: 'mysql-queries',
+				renderTo: 'mysql',
 				type: 'spline',
 				marginRight: 30,
 				animation: Highcharts.svg
 			},
 			title: {
-				text: 'MySQL Queries'
+				text: 'MySQL'
+			},
+			xAxis: {
+				type: 'datetime',
+				tickPixelInterval: 150
+			},
+			yAxis: {
+				title: {
+					text: 'quantity'
+				},
+				plotLines: [{
+					value: 0,
+					width: 1,
+					color: '#808080'
+				}],
+				labels: {
+					formatter: function () {
+						return this.value;
+					}
+				},
+				min: 0,
+				tickPixelInterval: 25
+			},
+			legend: {
+				enabled: true,
+				alignColumns: false
+			},
+			plotOptions: {
+				series: {
+					marker: {
+						enabled: false
+					},
+					states: {
+						hover: {
+							enabled: false
+						}
+					}
+				}
+			},
+			series: series
+		});
+	};
+
+	// redis
+	window.redisHighchart = function (charts) {
+		var series = [];
+		charts.forEach(function (e) {
+			series.push({
+				name: e.k,
+				data: []
+			});
+		});
+
+		new Highcharts.Chart({
+			chart: {
+				renderTo: 'redis',
+				type: 'spline',
+				marginRight: 30,
+				animation: Highcharts.svg
+			},
+			title: {
+				text: 'Redis'
 			},
 			xAxis: {
 				type: 'datetime',
@@ -603,92 +670,24 @@ $(function () {
 		});
 	};
 
-	// mysql traffic
-	window.mysqlTrafficHighchart = function (structure) {
+	// pg-bouncer
+	window.pgBouncerHighchart = function (charts) {
 		var series = [];
-		structure.forEach(function (name) {
+		charts.forEach(function (e) {
 			series.push({
-				name: name,
+				name: e.k,
 				data: []
 			});
 		});
 
 		new Highcharts.Chart({
 			chart: {
-				renderTo: 'mysql-traffic',
+				renderTo: 'pg-bouncer',
 				type: 'spline',
-				marginRight: 30,
 				animation: Highcharts.svg
 			},
 			title: {
-				text: 'MySQL Traffic'
-			},
-			xAxis: {
-				type: 'datetime',
-				tickPixelInterval: 150
-			},
-			yAxis: {
-				title: {
-					text: 'traffic in sec'
-				},
-				plotLines: [{
-					value: 0,
-					width: 1,
-					color: '#808080'
-				}],
-				labels: {
-					formatter: function () {
-						var maxElement = this.axis.max;
-						if (maxElement > 1024 * 1024) {
-							return (this.value / 1024 / 1024).toFixed(1) + ' MB/s';
-						} else if (maxElement > 1024) {
-							return (this.value / 1024).toFixed(1) + ' KB/s';
-						} else {
-							return (this.value) + ' Bytes';
-						}
-					}
-				},
-				min: 0,
-				tickPixelInterval: 25
-			},
-			legend: {
-				enabled: true
-			},
-			plotOptions: {
-				series: {
-					marker: {
-						enabled: false
-					},
-					states: {
-						hover: {
-							enabled: false
-						}
-					}
-				}
-			},
-			series: series
-		});
-	};
-
-	// redis queries
-	window.redisQueriesHighchart = function (structure) {
-		var series = [];
-		structure.forEach(function (name) {
-			series.push({
-				name: name,
-				data: []
-			});
-		});
-
-		new Highcharts.Chart({
-			chart: {
-				renderTo: 'redis-queries',
-				type: 'spline',
-				marginRight: 30,
-				animation: Highcharts.svg
-			},
-			title: {
-				text: 'Redis Queries'
+				text: 'PgBouncer'
 			},
 			xAxis: {
 				type: 'datetime',

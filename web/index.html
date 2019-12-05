@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 	<meta charset="utf-8">
 	<title>highload-stats</title>
@@ -9,23 +9,26 @@
 	<link href="common.css" type="text/css" rel="stylesheet">
 </head>
 <body>
-	<div class="info">
-		<h3>highload-stats • <a href="https://github.com/oxmix/highload-stats" target="_blank">git</a></h3>
-		<div>
-			<span id="stats-connections"></span>
-			<span id="stats-ping-pong"></span>
-		</div>
-		<div id="stats-server"></div>
+<div class="info">
+	<h3>highload-stats
+		• <a href="#" onclick="window.location.href = window.location.href + 'history'; return false;">
+			go to history 24</a>
+		• <a href="https://github.com/oxmix/highload-stats" target="_blank">git</a></h3>
+	<div>
+		<span id="stats-connections"></span>
+		<span id="stats-ping-pong"></span>
 	</div>
-	<div class="graphics">
-		<div id="bandwidth"></div>
-		<div id="io-disk"></div>
-		<div id="ram"></div>
-		<div id="cpu"></div>
-		<div id="space"></div>
-		<div id="mysql-queries"></div>
-		<div id="mysql-traffic"></div>
-		<div id="redis-queries"></div>
-	</div>
+	<div id="stats-server"></div>
+</div>
+<div class="graphics">
+	<div id="bandwidth" style="height: 300px;"></div>
+	<div id="io-disk" style="height: 300px;"></div>
+	<div id="ram" style="height: 300px;"></div>
+	<div id="cpu" style="height: 300px;"></div>
+	<div id="space" style="height: 300px;"></div>
+	<div id="mysql" style="height: 300px;"></div>
+	<div id="redis" style="height: 300px;"></div>
+	<div id="pg-bouncer" style="height: 300px;"></div>
+</div>
 </body>
 </html>

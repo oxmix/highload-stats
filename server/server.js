@@ -237,49 +237,7 @@ var send = function (object, from) {
 			connection[key].socket.send(string);
 		}
 	}
-
-	// save
-	if ('data' in object)
-		historySave(object.data);
 };
-
-// history 24
-var historyFile = __dirname + '/history.db';
-
-var historyEvents = [
-	'redis',
-	'io-disk',
-	'cpu',
-	'space',
-	'mysql',
-	'bandwidth',
-	'memory'
-];
-
-var historySave = function (data) {
-	if (historyEvents.indexOf(data.event) === -1)
-		return;
-
-	data.time = (new Date).getTime();
-
-	if (data.time / 1000 % 10 > 1)
-		return;
-
-	fs.appendFile(historyFile, JSON.stringify(data) + "\n",
-		function (err) {
-			if (err)
-				log('warn', 'Failed save history: ' + err);
-
-			log('info', 'Save history event: ' + data.event);
-		});
-};
-
-setInterval(function () {
-	var limitRows = 86400 * historyEvents.length / 10;
-	exec('tail -n ' + limitRows + ' ' + historyFile + ' > ' + historyFile + '.tmp');
-	exec('rm ' + historyFile + ' && mv ' + historyFile + '.tmp ' + historyFile);
-	log('info', 'Trim history file, limit rows: ' + limitRows);
-}, 15 * 60 * 1000);
 
 // ping
 setInterval(function () {
@@ -333,10 +291,19 @@ exec("ip route ls 2>&1 | grep default | awk '{print $5}'", function (error, stdo
 		send({
 			data: {
 				event: 'bandwidth',
-				in: bw[1],
-				out: bw[2]
+				charts: [
+					{
+						name: 'in',
+						val: bw[1]
+					}, {
+						name: 'out',
+						val: bw[2]
+					}
+				]
 			}
 		});
+
+		historySave('bandwidth', [bw[1], bw[2]]);
 	});
 });
 
@@ -357,17 +324,26 @@ iotop.stdout.on('data', function (data) {
 		}, 0);
 	}
 
-	if (!r) r = 0;
-	if (!w) w = 0;
+	var read = r ? Math.round(r[1] * 1024) : 0;
+	var write = w ? Math.round(w[1] * 1024) : 0;
 
 	send({
 		data: {
 			event: 'io-disk',
-			read: Math.round(r[1] * 1024),
-			write: Math.round(w[1] * 1024),
-			io: Math.round(ioPer)
+			io: ioPer,
+			charts: [
+				{
+					name: 'read',
+					val: read
+				}, {
+					name: 'write',
+					val: write
+				}
+			]
 		}
 	});
+
+	historySave('io-disk', [read, write, ioPer]);
 });
 
 // memory
@@ -386,56 +362,64 @@ setInterval(function () {
 		mem['SwapUsed'] = mem['SwapTotal'] - mem['SwapFree'];
 		mem['Total'] = mem['MemTotal'] + mem['SwapTotal'];
 
+		var charts = [
+			{
+				name: 'used',
+				y: (mem['Used'] * 100 / mem['Total']),
+				size: (mem['Used'] / 1024 / 1024).toFixed(2)
+			}, {
+				name: 'free',
+				y: (mem['MemFree'] * 100 / mem['Total']),
+				size: (mem['MemFree'] / 1024 / 1024).toFixed(2)
+			}, {
+				name: 'shared',
+				y: (mem['Shmem'] * 100 / mem['Total']),
+				size: (mem['Shmem'] / 1024 / 1024).toFixed(2)
+			}, {
+				name: 'buffers',
+				y: (mem['Buffers'] * 100 / mem['Total']),
+				size: (mem['Buffers'] / 1024 / 1024).toFixed(2)
+			}, {
+				name: 'cached',
+				y: (mem['Cached'] * 100 / mem['Total']),
+				size: (mem['Cached'] / 1024 / 1024).toFixed(2)
+			}, {
+				name: 'slab',
+				y: (mem['Slab'] * 100 / mem['Total']),
+				size: (mem['Slab'] / 1024 / 1024).toFixed(2)
+			}, {
+				name: 'swap used',
+				y: (mem['SwapUsed'] * 100 / mem['Total']),
+				size: (mem['SwapUsed'] / 1024 / 1024).toFixed(2)
+			}, {
+				name: 'swap free',
+				y: (mem['SwapFree'] * 100 / mem['Total']),
+				size: (mem['SwapFree'] / 1024 / 1024).toFixed(2)
+			}
+		];
+
 		send({
 			data: {
 				event: 'memory',
 				totalRam: mem['MemTotal'],
 				totalSwap: mem['SwapTotal'],
-				ram: [
-					{
-						name: 'used',
-						y: (mem['Used'] * 100 / mem['Total']),
-						size: (mem['Used'] / 1024 / 1024).toFixed(2)
-					}, {
-						name: 'free',
-						y: (mem['MemFree'] * 100 / mem['Total']),
-						size: (mem['MemFree'] / 1024 / 1024).toFixed(2)
-					}, {
-						name: 'shared',
-						y: (mem['Shmem'] * 100 / mem['Total']),
-						size: (mem['Shmem'] / 1024 / 1024).toFixed(2)
-					}, {
-						name: 'buffers',
-						y: (mem['Buffers'] * 100 / mem['Total']),
-						size: (mem['Buffers'] / 1024 / 1024).toFixed(2)
-					}, {
-						name: 'cached',
-						y: (mem['Cached'] * 100 / mem['Total']),
-						size: (mem['Cached'] / 1024 / 1024).toFixed(2)
-					}, {
-						name: 'slab',
-						y: (mem['Slab'] * 100 / mem['Total']),
-						size: (mem['Slab'] / 1024 / 1024).toFixed(2)
-					}, {
-						name: 'swap used',
-						y: (mem['SwapUsed'] * 100 / mem['Total']),
-						size: (mem['SwapUsed'] / 1024 / 1024).toFixed(2)
-					}, {
-						name: 'swap free',
-						y: (mem['SwapFree'] * 100 / mem['Total']),
-						size: (mem['SwapFree'] / 1024 / 1024).toFixed(2)
-					}
-				]
+				charts: charts
 			}
+		});
+
+		historySave('memory', {
+			totalRam: mem['MemTotal'],
+			totalSwap: mem['SwapTotal'],
+			charts: charts
 		});
 	});
 }, 1000);
 
 // cpu cores stat
 var cpuPrev = {};
-var cpusLoad = {};
 setInterval(function () {
 	exec('cat /proc/stat', function (error, stdout, stderr) {
+		var cpusLoad = [];
 		stdout.match(/(cpu\d+).+/g).forEach(function (cpu, num) {
 			num = ++num;
 			cpu = cpu.split(' ');
@@ -450,20 +434,31 @@ setInterval(function () {
 					total += +e;
 			});
 
-			diffIdle = idle - (cpuPrev[num].idle || 0);
-			diffTotal = total - (cpuPrev[num].total || 0);
+			var diffIdle = idle - (cpuPrev[num].idle || 0);
+			var diffTotal = total - (cpuPrev[num].total || 0);
 
 			cpuPrev[num].idle = idle;
 			cpuPrev[num].total = total;
 
-			cpusLoad[num] = Math.floor((1000 * (diffTotal - diffIdle) / diffTotal + 5) / 10);
+			cpusLoad.push(Math.floor((1000 * (diffTotal - diffIdle) / diffTotal + 5) / 10));
 		});
-	});
-	send({
-		data: {
-			event: 'cpu',
-			list: cpusLoad
-		}
+
+		if (!cpusLoad.length)
+			return;
+
+		var avg = (cpusLoad.reduce(function (a, b) {
+			return a + b;
+		}, 0) / cpusLoad.length).toFixed(2);
+
+		send({
+			data: {
+				event: 'cpu',
+				avg: avg,
+				charts: cpusLoad
+			}
+		});
+
+		historySave('cpu', avg);
 	});
 }, 1000);
 
@@ -502,8 +497,13 @@ setInterval(function () {
 			data: {
 				event: 'space',
 				total: total,
-				space: charts
+				charts: charts
 			}
+		});
+
+		historySave('space', {
+			total: total,
+			charts: charts
 		});
 	});
 }, 1000);
@@ -512,8 +512,8 @@ setInterval(function () {
 var sqlQuery = "SHOW GLOBAL STATUS WHERE Variable_name IN (" +
 	"'Bytes_received', 'Bytes_sent', 'Innodb_data_read', 'Innodb_data_written'," +
 	"'Uptime', 'Connections', 'Max_used_connections', 'Queries', 'Slow_queries'," +
-	"'Com_select', 'Com_update', 'Com_update_multi', 'Com_insert', 'Com_insert_select', 'Com_delete'," +
-	"'Com_create_table', 'Com_alter_table', 'Com_drop_table', 'Created_tmp_tables', 'Created_tmp_disk_tables');";
+	"'Com_select', 'Com_update', 'Com_insert', 'Com_delete'," +
+	"'Com_alter_table', 'Com_drop_table', 'Created_tmp_tables', 'Created_tmp_disk_tables');";
 var mysqlMem = {};
 setInterval(function () {
 	var mysql = spawn('mysql', ['-e', sqlQuery]);
@@ -522,12 +522,13 @@ setInterval(function () {
 	});
 	mysql.stdout.on('data', function (data) {
 		var mysql = data.toString().match(/(\w+)\t(\d+)/gm);
-		var list = {
+		var charts = {
 			info: {},
 			traffic: {},
 			innodb: {},
-			queries: {}
+			queries: []
 		};
+		var queries = [];
 		mysql.forEach(function (value) {
 			var keyVal = value.split(/\t/);
 			var key = keyVal[0].toLowerCase().replace('com_', '').replace(/_/g, ' ');
@@ -535,23 +536,26 @@ setInterval(function () {
 			switch (key) {
 				case 'uptime':
 				case 'max used connections':
-					list['info'][key] = val;
+					charts['info'][key] = val;
 					break;
 
 				case 'bytes received':
 				case 'bytes sent':
-					list['traffic'][key] = val - mysqlMem[key] || 0;
+					charts['traffic'][key] = val - mysqlMem[key] || 0;
 					mysqlMem[key] = val;
 					break;
 
 				case 'innodb data read':
 				case 'innodb data written':
-					list['innodb'][key] = val - mysqlMem[key] || 0;
+					charts['innodb'][key] = val - mysqlMem[key] || 0;
 					mysqlMem[key] = val;
 					break;
 
 				default:
-					list['queries'][key] = val - mysqlMem[key] || 0;
+					charts['queries'].push({
+						k: key,
+						v: val - mysqlMem[key] || 0
+					});
 					mysqlMem[key] = val;
 					break;
 			}
@@ -560,9 +564,11 @@ setInterval(function () {
 		send({
 			data: {
 				event: 'mysql',
-				list: list
+				charts: charts
 			}
 		});
+
+		historySave('mysql', charts['queries']);
 	});
 }, 1000);
 
@@ -573,8 +579,8 @@ setInterval(function () {
 		var redis = stdout.match(/(.*?):([0-9.]+)/gm);
 		if (!redis)
 			return;
-		var list = {
-			queries: {},
+		var charts = {
+			queries: [],
 			traffic: {}
 		};
 		redis.forEach(function (value) {
@@ -583,14 +589,26 @@ setInterval(function () {
 			var val = keyVal[1];
 			switch (key) {
 				case 'total connections received':
+					charts['queries'].push({
+						k: 'connections',
+						v: val - redisMem[key] || 0
+					});
+					redisMem[key] = val;
+					break;
 				case 'total commands processed':
-					list['queries'][key] = val - redisMem[key] || 0;
+					charts['queries'].push({
+						k: 'commands',
+						v: val - redisMem[key] || 0
+					});
 					redisMem[key] = val;
 					break;
 
 				case 'total net input bytes':
+					charts['traffic']['input'] = val - redisMem[key] || 0;
+					redisMem[key] = val;
+					break;
 				case 'total net output bytes':
-					list['traffic'][key] = val - redisMem[key] || 0;
+					charts['traffic']['output'] = val - redisMem[key] || 0;
 					redisMem[key] = val;
 					break;
 			}
@@ -599,10 +617,66 @@ setInterval(function () {
 		send({
 			data: {
 				event: 'redis',
-				list: list
+				charts: charts
 			}
 		});
+
+		historySave('redis', charts['queries']);
 	});
+}, 1000);
+
+// PgBouncer
+var pgBouncerMem = {};
+setInterval(function () {
+	exec('sudo -u postgres psql -p 6432 -wU pgbouncer pgbouncer -qAc "SHOW STATS;"',
+		function (error, stdout, stderr) {
+			if (error)
+				return;
+			var rows = stdout.split("\n");
+			rows.pop();
+			rows.pop();
+			var head = rows.shift().split('|');
+			var charts = {
+				sent: 0,
+				received: 0,
+				queries: []
+			};
+			rows.forEach(function (row) {
+				row = row.split('|');
+				var dbName = row[0];
+				if (dbName === 'pgbouncer')
+					return;
+
+				row.forEach(function (val, key) {
+					var name = head[key];
+					if (name === 'total_sent')
+						charts.sent += val - pgBouncerMem[key] || 0;
+
+					if (name === 'total_received')
+						charts.received += val - pgBouncerMem[key] || 0;
+
+					pgBouncerMem[key] = +val;
+
+					if (name === 'total_query_count') {
+						charts.queries.push({
+							k: dbName,
+							v: val - pgBouncerMem[key + dbName] || 0
+						});
+
+						pgBouncerMem[key + dbName] = +val;
+					}
+				});
+			});
+
+			send({
+				data: {
+					event: 'pg-bouncer',
+					charts: charts
+				}
+			});
+
+			historySave('pg-bouncer', charts['queries']);
+		});
 }, 1000);
 
 // telemetry
@@ -614,7 +688,6 @@ setInterval(function () {
 	telemetryData['disks'] = '';
 }, 60 * 60 * 1000);
 var telemetry = function () {
-
 	// disks
 	if (telemetryData['disks'] === '') {
 		telemetryData['disks'] = '...';
@@ -624,12 +697,62 @@ var telemetry = function () {
 	}
 
 	// who
-	exec("tail -n 300 /var/log/auth.log | grep -i 'sshd\\[.*\\]: Accepted\\|login\\['", function (error, stdout, stderr) {
-		telemetryData['who'] = stdout;
-	});
+	exec("tail -n 300 /var/log/auth.log | grep -i 'sshd\\[.*\\]: Accepted\\|login\\['",
+		function (error, stdout, stderr) {
+			telemetryData['who'] = stdout;
+		});
 
 	return telemetryData;
 };
+
+// history 24
+var historyFile = __dirname + '/history.db';
+var historyLock = false;
+var historyUseEvents = [];
+var historySave = function (event, data) {
+	if (historyLock)
+		return;
+
+	if (historyUseEvents.indexOf(event) === -1)
+		historyUseEvents.push(event);
+
+	var time = (new Date).getTime();
+
+	if (time / 1000 % 10 > 1)
+		return;
+
+	var row = JSON.stringify({
+		e: event,
+		t: time,
+		d: data
+	});
+
+	fs.appendFile(historyFile, row + "\n",
+		function (err) {
+			if (err)
+				log('warn', 'Failed save history: ' + err);
+
+			log('info', 'Save history event: ' + data.event);
+		});
+};
+setInterval(function () {
+	historyLock = true;
+
+	var h24 = 86400;
+	var limitRows = h24 * historyUseEvents.length / 10;
+	exec('tail -n ' + limitRows + ' ' + historyFile + ' > ' + historyFile + '.tmp', function (error, stdout, stderr) {
+		if (error) {
+			historyLock = false;
+			log('warn', 'Failed cleaning history: ' + error);
+			return;
+		}
+		exec('rm ' + historyFile + ' && mv ' + historyFile + '.tmp ' + historyFile, function () {
+			historyLock = false;
+		});
+	});
+
+	log('info', 'Trim history file, limit rows: ' + limitRows);
+}, 15 * 60 * 1000);
 
 /**
  * Other functions
