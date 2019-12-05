@@ -55,6 +55,7 @@ var highLoad = (function () {
 					if (!chart)
 						return false;
 
+					data.io = Math.round(data.io);
 					var io = ('000' + data.io.toString()).substring(data.io.toString().length);
 					chart.setTitle({text: 'Disks I/O: ' + io + ' %'});
 
@@ -70,8 +71,8 @@ var highLoad = (function () {
 						return false;
 
 					chart.setTitle({
-						text: 'Ram ' + Math.ceil(data.totalRam / 1024 / 1024) + ' GB'
-							+ ' + Swap ' + Math.ceil(data.totalSwap / 1024 / 1024) + ' GB'
+						text: 'Ram: ' + Math.ceil(data.totalRam / 1024 / 1024) + ' GB'
+							+ ' + Swap: ' + Math.ceil(data.totalSwap / 1024 / 1024) + ' GB'
 					});
 					chart.series[0].setData(data.charts, true);
 				}
