@@ -132,7 +132,9 @@ var highLoad = (function () {
 						return false;
 					}
 
-					chart.setTitle({text: 'Redis Sent: ' + self.formatter(data.charts['traffic']['output'])});
+					chart.setTitle({
+						text: 'Redis: ' + (data.charts.memory / 1024 / 1024).toFixed(2) + ' MB used'
+					});
 
 					++self.graffCount5;
 					data.charts['queries'].forEach(function (e, k) {

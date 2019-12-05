@@ -575,7 +575,7 @@ setInterval(function () {
 // Redis
 var redisMem = {};
 setInterval(function () {
-	exec("redis-cli info stats", function (error, stdout, stderr) {
+	exec("redis-cli info", function (error, stdout, stderr) {
 		var redis = stdout.match(/(.*?):([0-9.]+)/gm);
 		if (!redis)
 			return;
@@ -585,30 +585,29 @@ setInterval(function () {
 		};
 		redis.forEach(function (value) {
 			var keyVal = value.split(':');
-			var key = keyVal[0].toLowerCase().replace(/_/g, ' ');
+			var key = keyVal[0].toLowerCase();
 			var val = keyVal[1];
 			switch (key) {
-				case 'total connections received':
+				case 'total_connections_received':
 					charts['queries'].push({
 						k: 'connections',
 						v: val - redisMem[key] || 0
 					});
+					redisMem[key] = val;
 					break;
-				case 'total commands processed':
+				case 'total_commands_processed':
 					charts['queries'].push({
 						k: 'commands',
 						v: val - redisMem[key] || 0
 					});
+					redisMem[key] = val;
 					break;
 
-				case 'total net input bytes':
-					charts['traffic']['input'] = val - redisMem[key] || 0;
-					break;
-				case 'total net output bytes':
-					charts['traffic']['output'] = val - redisMem[key] || 0;
+				case 'used_memory':
+					charts['memory'] = +val;
+					redisMem[key] = val;
 					break;
 			}
-			redisMem[key] = val;
 		});
 
 		send({
