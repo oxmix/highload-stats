@@ -506,6 +506,9 @@ $(function () {
 
 	// mysql
 	window.mysqlHighchart = function () {
+		if (!init.mysql)
+			return;
+
 		var data = highLoad.data['mysql'];
 		var series = [];
 		init.mysql.forEach(function (e, k) {
@@ -575,6 +578,9 @@ $(function () {
 
 	// redis
 	window.redisHighchart = function () {
+		if (!init.redis)
+			return;
+
 		var data = highLoad.data['redis'];
 		var series = [];
 		init.redis.forEach(function (e, k) {
@@ -638,6 +644,9 @@ $(function () {
 	};
 
 	window.pgBouncerHighchart = function () {
+		if (!init.pgBouncer)
+			return;
+
 		var data = highLoad.data['pg-bouncer'];
 		var series = [];
 		init.pgBouncer.forEach(function (e, k) {
