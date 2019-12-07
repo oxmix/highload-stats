@@ -653,7 +653,7 @@ setInterval(function () {
 
 					pgBouncerMem[key] = +val;
 
-					if (name === 'total_query_count') {
+					if (name === 'total_query_count' || name === 'total_requests') {
 						charts.queries.push({
 							k: dbName,
 							v: val - pgBouncerMem[key + dbName] || 0
