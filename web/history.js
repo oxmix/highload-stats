@@ -666,7 +666,7 @@ $(function () {
 				zoomType: 'x'
 			},
 			title: {
-				text: 'Redis'
+				text: 'PgBouncer'
 			},
 			xAxis: {
 				type: 'datetime',
