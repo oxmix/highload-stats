@@ -79,9 +79,8 @@ var highLoad = (function () {
 						break;
 
 					case 'redis':
-						if (!init.redis) {
+						if (!init.redis)
 							init.redis = e.d;
-						}
 
 						e.d.forEach(function (v, k) {
 							if (!(k in self.data[e.e]))
@@ -91,8 +90,7 @@ var highLoad = (function () {
 						break;
 
 					case 'pg-bouncer':
-						if (!init.pgBouncer)
-							init.pgBouncer = e.d;
+						init.pgBouncer = e.d;
 
 						e.d.forEach(function (v, k) {
 							if (!(k in self.data[e.e]))
