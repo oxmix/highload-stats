@@ -515,10 +515,11 @@ var sqlQuery = "SHOW GLOBAL STATUS WHERE Variable_name IN (" +
 	"'Com_select', 'Com_update', 'Com_insert', 'Com_delete'," +
 	"'Com_alter_table', 'Com_drop_table', 'Created_tmp_tables', 'Created_tmp_disk_tables');";
 var mysqlMem = {};
-setInterval(function () {
+var mysqlInterval = setInterval(function () {
 	var mysql = spawn('mysql', ['-e', sqlQuery]);
 	mysql.on('error', function () {
 		log('warn', 'Mysql client not found')
+		clearInterval(mysqlInterval);
 	});
 	mysql.stdout.on('data', function (data) {
 		var mysql = data.toString().match(/(\w+)\t(\d+)/gm);
@@ -528,7 +529,6 @@ setInterval(function () {
 			innodb: {},
 			queries: []
 		};
-		var queries = [];
 		mysql.forEach(function (value) {
 			var keyVal = value.split(/\t/);
 			var key = keyVal[0].toLowerCase().replace('com_', '').replace(/_/g, ' ');
@@ -574,8 +574,12 @@ setInterval(function () {
 
 // Redis
 var redisMem = {};
-setInterval(function () {
+var redisInterval = setInterval(function () {
 	exec("redis-cli info", function (error, stdout, stderr) {
+		if (error) {
+			clearInterval(redisInterval);
+			return;
+		}
 		var redis = stdout.match(/(.*?):([0-9.]+)/gm);
 		if (!redis)
 			return;
@@ -623,11 +627,13 @@ setInterval(function () {
 
 // PgBouncer
 var pgBouncerMem = {};
-setInterval(function () {
+var pgBouncerInterval = setInterval(function () {
 	exec('sudo -u postgres psql -p 6432 -wU pgbouncer pgbouncer -qAc "SHOW STATS;"',
 		function (error, stdout, stderr) {
-			if (error)
+			if (error) {
+				clearInterval(pgBouncerInterval);
 				return;
+			}
 			var rows = stdout.split("\n");
 			rows.pop();
 			rows.pop();
