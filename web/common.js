@@ -1,3 +1,4 @@
+var debug = false;
 var highLoad = (function () {
 
 	this.webSocketIndef = null;
@@ -7,12 +8,14 @@ var highLoad = (function () {
 	this.graffCount4 = 0;
 	this.graffCount5 = 0;
 	this.graffCount6 = 0;
+	this.graffCount7 = 0;
+	this.graffCount8 = 0;
 	this.graffMax = 30;
 
 	this.webSocket = function () {
 		this.webSocketIndef = libWebSocket({
 			server: window.location.href.replace('http', 'ws'),
-			debug: false,
+			debug: debug,
 			open: function () {
 			},
 			message: function (data) {
@@ -154,8 +157,49 @@ var highLoad = (function () {
 
 					chart.setTitle({text: 'PgBouncer Sent: ' + self.formatter(data.charts.sent)});
 
+					++self.graffCount6;
 					data.charts.queries.forEach(function (e, k) {
-						chart.series[k].addPoint([time, e.v], true, (++self.graffCount6 >= self.graffMax), true);
+						chart.series[k].addPoint([time, e.v], true, (self.graffCount6 >= self.graffMax), true);
+					});
+				}
+
+				if (data.event === 'nginx') {
+					chart = $('#nginx').highcharts();
+					if (!chart) {
+						if (data.charts.length > 0)
+							$('#nginx').show();
+
+						nginxHighchart(data.charts);
+						return false;
+					}
+
+					++self.graffCount7;
+					data.charts.forEach(function (e, k) {
+						chart.series[k].addPoint([time, parseFloat(e[1])], true,
+							(self.graffCount7 >= self.graffMax), true);
+
+						if (e[0] === 'requests')
+							chart.setTitle({text: 'Nginx: ' + e[1] + ' req/s'});
+					});
+				}
+
+				if (data.event === 'fpm') {
+					chart = $('#fpm').highcharts();
+					if (!chart) {
+						if (data.charts.length > 0)
+							$('#fpm').show();
+
+						fpmHighchart(data.charts);
+						return false;
+					}
+
+					++self.graffCount8;
+					data.charts.forEach(function (e, k) {
+						chart.series[k].addPoint([time, parseFloat(e[1])], true,
+							(self.graffCount8 >= self.graffMax), true);
+
+						if (e[0] === 'runtime avg')
+							chart.setTitle({text: 'FPM: ' + e[1]});
 					});
 				}
 			}
@@ -691,6 +735,124 @@ $(function () {
 			},
 			title: {
 				text: 'PgBouncer'
+			},
+			xAxis: {
+				type: 'datetime',
+				tickPixelInterval: 150
+			},
+			yAxis: {
+				title: {
+					text: 'quantity'
+				},
+				plotLines: [{
+					value: 0,
+					width: 1,
+					color: '#808080'
+				}],
+				labels: {
+					formatter: function () {
+						return this.value;
+					}
+				},
+				min: 0,
+				tickPixelInterval: 25
+			},
+			legend: {
+				enabled: true
+			},
+			plotOptions: {
+				series: {
+					marker: {
+						enabled: false
+					},
+					states: {
+						hover: {
+							enabled: false
+						}
+					}
+				}
+			},
+			series: series
+		});
+	};
+
+	// nginx
+	window.nginxHighchart = function (charts) {
+		var series = [];
+		charts.forEach(function (e) {
+			series.push({
+				name: e[0],
+				data: []
+			});
+		});
+
+		new Highcharts.Chart({
+			chart: {
+				renderTo: 'nginx',
+				type: 'spline',
+				animation: Highcharts.svg
+			},
+			title: {
+				text: 'Nginx'
+			},
+			xAxis: {
+				type: 'datetime',
+				tickPixelInterval: 150
+			},
+			yAxis: {
+				title: {
+					text: 'quantity'
+				},
+				plotLines: [{
+					value: 0,
+					width: 1,
+					color: '#808080'
+				}],
+				labels: {
+					formatter: function () {
+						return this.value;
+					}
+				},
+				min: 0,
+				tickPixelInterval: 25
+			},
+			legend: {
+				enabled: true
+			},
+			plotOptions: {
+				series: {
+					marker: {
+						enabled: false
+					},
+					states: {
+						hover: {
+							enabled: false
+						}
+					}
+				}
+			},
+			series: series
+		});
+	};
+
+	// fpm
+	window.fpmHighchart = function (charts) {
+		var series = [];
+		charts.forEach(function (e) {
+			series.push({
+				name: e[0],
+				data: []
+			});
+		});
+
+		new Highcharts.Chart({
+			chart: {
+				renderTo: 'fpm',
+				type: 'spline',
+				animation: Highcharts.svg
+			},
+			title: {
+				text: 'FPM'
 			},
 			xAxis: {
 				type: 'datetime',

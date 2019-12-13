@@ -22,7 +22,9 @@ body {
 
 .graphics > div#mysql,
 .graphics > div#redis,
-.graphics > div#pg-bouncer {
+.graphics > div#pg-bouncer,
+.graphics > div#nginx,
+.graphics > div#fpm {
 	display: none;
 }
 

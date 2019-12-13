@@ -6,7 +6,9 @@ var highLoad = (function () {
 		mysql: null,
 		redis: null,
 		postgres: null,
-		pgBouncer: null
+		pgBouncer: null,
+		nginx: null,
+		fpm: null
 	};
 
 	this.data = {
@@ -17,7 +19,9 @@ var highLoad = (function () {
 		'space': {},
 		'mysql': [],
 		'redis': [],
-		'pg-bouncer': []
+		'pg-bouncer': [],
+		'nginx': [],
+		'fpm': []
 	};
 
 	this.get = function () {
@@ -98,6 +102,28 @@ var highLoad = (function () {
 							self.data[e.e][k].push([e.t, +v.v]);
 						});
 						break;
+
+					case 'nginx':
+						if (!init.nginx)
+							init.nginx = e.d;
+
+						e.d.forEach(function (v, k) {
+							if (!(k in self.data[e.e]))
+								self.data[e.e][k] = [];
+							self.data[e.e][k].push([e.t, +v[1]]);
+						});
+						break;
+
+					case 'fpm':
+						if (!init.fpm)
+							init.fpm = e.d;
+
+						e.d.forEach(function (v, k) {
+							if (!(k in self.data[e.e]))
+								self.data[e.e][k] = [];
+							self.data[e.e][k].push([e.t, +v[1]]);
+						});
+						break;
 				}
 			});
 
@@ -109,6 +135,8 @@ var highLoad = (function () {
 			window.mysqlHighchart();
 			window.redisHighchart();
 			window.pgBouncerHighchart();
+			window.nginxHighchart();
+			window.fpmHighchart();
 
 			$('#loading').hide();
 		});
@@ -665,6 +693,138 @@ $(function () {
 			},
 			title: {
 				text: 'PgBouncer'
+			},
+			xAxis: {
+				type: 'datetime',
+				tickPixelInterval: 150
+			},
+			yAxis: {
+				title: {
+					text: 'quantity'
+				},
+				plotLines: [{
+					value: 0,
+					width: 1,
+					color: '#808080'
+				}],
+				labels: {
+					formatter: function () {
+						return this.value;
+					}
+				},
+				min: 0,
+				tickPixelInterval: 25
+			},
+			legend: {
+				enabled: true
+			},
+			plotOptions: {
+				series: {
+					lineWidth: 0.8,
+					marker: {
+						enabled: false
+					},
+					states: {
+						hover: {
+							enabled: false
+						}
+					}
+				}
+			},
+			series: series
+		});
+	};
+
+	window.nginxHighchart = function () {
+		if (!init.nginx)
+			return;
+
+		var data = highLoad.data['nginx'];
+		var series = [];
+		init.nginx.forEach(function (e, k) {
+			series.push({
+				name: e[0],
+				data: data[k]
+			});
+
+			$('#nginx').show();
+		});
+
+		new Highcharts.Chart({
+			chart: {
+				renderTo: 'nginx',
+				type: 'spline',
+				animation: Highcharts.svg,
+				zoomType: 'x'
+			},
+			title: {
+				text: 'Nginx'
+			},
+			xAxis: {
+				type: 'datetime',
+				tickPixelInterval: 150
+			},
+			yAxis: {
+				title: {
+					text: 'quantity'
+				},
+				plotLines: [{
+					value: 0,
+					width: 1,
+					color: '#808080'
+				}],
+				labels: {
+					formatter: function () {
+						return this.value;
+					}
+				},
+				min: 0,
+				tickPixelInterval: 25
+			},
+			legend: {
+				enabled: true
+			},
+			plotOptions: {
+				series: {
+					lineWidth: 0.8,
+					marker: {
+						enabled: false
+					},
+					states: {
+						hover: {
+							enabled: false
+						}
+					}
+				}
+			},
+			series: series
+		});
+	};
+
+	window.fpmHighchart = function () {
+		if (!init.fpm)
+			return;
+
+		var data = highLoad.data['fpm'];
+		var series = [];
+		init.fpm.forEach(function (e, k) {
+			series.push({
+				name: e[0],
+				data: data[k]
+			});
+
+			$('#fpm').show();
+		});
+
+		new Highcharts.Chart({
+			chart: {
+				renderTo: 'fpm',
+				type: 'spline',
+				animation: Highcharts.svg,
+				zoomType: 'x'
+			},
+			title: {
+				text: 'FPM'
 			},
 			xAxis: {
 				type: 'datetime',

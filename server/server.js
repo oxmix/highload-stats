@@ -681,6 +681,120 @@ var pgBouncerInterval = setInterval(function () {
 		});
 }, 1000);
 
+// Nginx
+var nginxMem = {};
+var nginxStats = function () {
+	http.get({
+		host: '127.0.0.1',
+		port: 80,
+		path: '/hgls-nginx'
+	}, function(res) {
+		if (res.statusCode !== 200) {
+			log('error', 'nginx get status: ' + res.statusCode);
+			setTimeout(nginxStats, 1000 * 60);
+			return;
+		}
+		res.on('data', function (chunk) {
+			var ngx = chunk.toString().match(/([0-9]+)/gm);
+			if (!ngx) {
+				log('error', 'nginx regex failed');
+				return;
+			}
+
+			var charts = [
+				['connections', ngx[0]],
+				['accepts', ngx[1] - nginxMem['accepts'] || 0],
+				['handled', ngx[2] - nginxMem['handled'] || 0],
+				['requests', ngx[3] - nginxMem['requests'] || 0],
+				['reading', ngx[4]],
+				['writing', ngx[5]],
+				['waiting', ngx[6]]
+			];
+
+			nginxMem['accepts'] = ngx[1];
+			nginxMem['handled'] = ngx[2];
+			nginxMem['requests'] = ngx[3];
+
+			send({
+				data: {
+					event: 'nginx',
+					charts: charts
+				}
+			});
+
+			historySave('nginx', charts);
+
+			setTimeout(nginxStats, 1000);
+		});
+	}).on('error', function(e) {
+		log('error', 'nginx get status: ' + e.message);
+		setTimeout(nginxStats, 1000 * 60);
+	});
+};
+nginxStats();
+
+// Fpm
+var fpmMem = {};
+var fpmStats = function () {
+	http.get({
+		host: '127.0.0.1',
+		port: 80,
+		path: '/hgls-fpm?full&json'
+	}, function (res) {
+		if (res.statusCode !== 200) {
+			log('error', 'fpm get status: ' + res.statusCode);
+			setTimeout(fpmStats, 1000 * 60);
+			return;
+		}
+		res.on('data', function (chunk) {
+			var fpm = chunk.toString();
+			if (!fpm) {
+				log('error', 'fpm regex failed');
+				return;
+			}
+
+			fpm = JSON.parse(fpm);
+
+			var runtime = 0,
+				quantity = 0;
+			fpm.processes.forEach(function (e) {
+				if (e.state.toLowerCase() !== 'running')
+					return;
+				runtime += e['request duration'];
+				quantity++;
+			});
+
+			var charts = [
+				['active processes', fpm['active processes']],
+				['idle processes', fpm['idle processes']],
+				['slow requests', fpm['slow requests'] - fpmMem['slow requests'] || 0],
+				['accepted conn', fpm['accepted conn'] - fpmMem['accepted conn'] || 0],
+				[
+					'runtime avg',
+					quantity > 0 && runtime > 0 ? (runtime / quantity / 1e6).toFixed(3) : 0
+				]
+			];
+			fpmMem['slow requests'] = fpm['slow requests'];
+			fpmMem['accepted conn'] = fpm['accepted conn'];
+
+			send({
+				data: {
+					event: 'fpm',
+					charts: charts
+				}
+			});
+
+			historySave('fpm', charts);
+
+			setTimeout(fpmStats, 1000);
+		});
+	}).on('error', function (e) {
+		log('error', 'fpm get status: ' + e.message);
+		setTimeout(fpmStats, 1000 * 60);
+	});
+};
+fpmStats();
+
 // telemetry
 var telemetryData = {
 	'disks': '',
