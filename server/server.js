@@ -753,7 +753,12 @@ var fpmStats = function () {
 				return;
 			}
 
-			fpm = JSON.parse(fpm);
+			try {
+				fpm = JSON.parse(fpm);
+			} catch (e) {
+				log('error', 'fpm json parse failed');
+				return;
+			}
 
 			var runtime = 0,
 				quantity = 0;
