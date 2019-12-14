@@ -102,7 +102,28 @@ var highLoad = (function () {
 
 					chart.setTitle({text: 'Space: ' + Math.ceil(data.total / 1024 / 1024) + ' TB'});
 
-					chart.series[0].setData(data.charts, true);
+					var section = {};
+					var categories = [];
+					data.charts.forEach(function (e) {
+						var g = e.name.split(': ');
+
+						if (categories.indexOf(g[1]) === -1)
+							categories.push(g[1]);
+
+						if (!(g[0] in section))
+							section[g[0]] = [];
+
+						section[g[0]].push(parseFloat(e.size));
+					});
+
+					chart.xAxis[0].update({
+						categories: categories
+					});
+
+					var k = 0;
+					Object.keys(section).forEach(function (key) {
+						chart.series[k++].setData(section[key], true);
+					});
 				}
 
 				if (data.event === 'mysql') {
@@ -565,33 +586,38 @@ $(function () {
 	new Highcharts.Chart({
 		chart: {
 			renderTo: 'space',
-			plotBackgroundColor: null,
-			plotBorderWidth: null,
-			plotShadow: false,
-			type: 'pie'
+			type: 'bar'
 		},
 		title: {
-			text: 'Space ... GB'
+			text: 'Space ... TB'
+		},
+		yAxis: {
+			min: 0,
+			title: {
+				text: 'GB'
+			}
+		},
+		legend: {
+			reversed: true
 		},
 		tooltip: {
 			enabled: false
 		},
 		plotOptions: {
-			pie: {
-				allowPointSelect: false,
+			series: {
+				stacking: 'normal'
+			},
+			bar: {
 				dataLabels: {
-					enabled: true,
-					format: '{point.name}: {point.percentage:.1f} %<br> <span style="color: grey;">size: {point.size} GB</span>'
-				},
-				size: 130,
-				legend: true,
-				innerSize: '50%',
-				showInLegend: true
+					enabled: true
+				}
 			}
 		},
 		series: [{
-			name: 'Space',
-			colorByPoint: true,
+			name: 'Free',
+			data: []
+		},{
+			name: 'Used',
 			data: []
 		}]
 	});

@@ -688,7 +688,7 @@ var nginxStats = function () {
 		host: '127.0.0.1',
 		port: 80,
 		path: '/hgls-nginx'
-	}, function(res) {
+	}, function (res) {
 		if (res.statusCode !== 200) {
 			log('error', 'nginx get status: ' + res.statusCode);
 			setTimeout(nginxStats, 1000 * 60);
@@ -726,9 +726,8 @@ var nginxStats = function () {
 
 			setTimeout(nginxStats, 1000);
 		});
-	}).on('error', function(e) {
-		log('error', 'nginx get status: ' + e.message);
-		setTimeout(nginxStats, 1000 * 60);
+	}).on('error', function (e) {
+		log('error', 'get http nginx: ' + e.message);
 	});
 };
 nginxStats();
@@ -742,61 +741,57 @@ var fpmStats = function () {
 		path: '/hgls-fpm?full&json'
 	}, function (res) {
 		if (res.statusCode !== 200) {
-			log('error', 'fpm get status: ' + res.statusCode);
+			log('warn', 'fpm get status: ' + res.statusCode);
 			setTimeout(fpmStats, 1000 * 60);
 			return;
 		}
+
 		res.on('data', function (chunk) {
-			var fpm = chunk.toString();
-			if (!fpm) {
-				log('error', 'fpm regex failed');
-				return;
-			}
+			var fpmJs = chunk.toString();
 
 			try {
-				fpm = JSON.parse(fpm);
-			} catch (e) {
+				var fpm = JSON.parse(fpmJs);
+
+				var runtime = 0,
+					quantity = 0;
+				fpm.processes.forEach(function (e) {
+					if (e.state.toLowerCase() !== 'running')
+						return;
+					runtime += e['request duration'];
+					quantity++;
+				});
+
+				var charts = [
+					['active processes', fpm['active processes']],
+					['idle processes', fpm['idle processes']],
+					['slow requests', fpm['slow requests'] - fpmMem['slow requests'] || 0],
+					['accepted conn', fpm['accepted conn'] - fpmMem['accepted conn'] || 0],
+					[
+						'runtime avg',
+						quantity > 0 && runtime > 0 ? (runtime / quantity / 1e6).toFixed(3) : 0
+					]
+				];
+				fpmMem['slow requests'] = fpm['slow requests'];
+				fpmMem['accepted conn'] = fpm['accepted conn'];
+
+				send({
+					data: {
+						event: 'fpm',
+						charts: charts
+					}
+				});
+
+				historySave('fpm', charts);
+
 				setTimeout(fpmStats, 1000);
-				log('error', 'fpm json parse failed');
-				return;
+
+			} catch (e) {
+				log('warn', 'fpm json parse failed: ' + e.toString());
+				setTimeout(fpmStats, 1000 * 10);
 			}
-
-			var runtime = 0,
-				quantity = 0;
-			fpm.processes.forEach(function (e) {
-				if (e.state.toLowerCase() !== 'running')
-					return;
-				runtime += e['request duration'];
-				quantity++;
-			});
-
-			var charts = [
-				['active processes', fpm['active processes']],
-				['idle processes', fpm['idle processes']],
-				['slow requests', fpm['slow requests'] - fpmMem['slow requests'] || 0],
-				['accepted conn', fpm['accepted conn'] - fpmMem['accepted conn'] || 0],
-				[
-					'runtime avg',
-					quantity > 0 && runtime > 0 ? (runtime / quantity / 1e6).toFixed(3) : 0
-				]
-			];
-			fpmMem['slow requests'] = fpm['slow requests'];
-			fpmMem['accepted conn'] = fpm['accepted conn'];
-
-			send({
-				data: {
-					event: 'fpm',
-					charts: charts
-				}
-			});
-
-			historySave('fpm', charts);
-
-			setTimeout(fpmStats, 1000);
 		});
 	}).on('error', function (e) {
-		log('error', 'fpm get status: ' + e.message);
-		setTimeout(fpmStats, 1000 * 60);
+		log('error', 'get http fpm: ' + e.message);
 	});
 };
 fpmStats();
