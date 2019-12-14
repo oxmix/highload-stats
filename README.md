@@ -1,8 +1,8 @@
 # highload-stats
 Statistics server in real-time graphs.
-![Preview](https://oxmix.net/storage/b/73/566c3e8588dc3.png)
+![Preview](web/preview/latest.png)
 
-## Install for Ubuntu/Debian
+## Install for Debian/Ubuntu/...
 Execute in console
 ```bash
 # Get code
@@ -12,8 +12,8 @@ cd ~ && git clone https://github.com/oxmix/highload-stats.git
 curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
 sudo apt-get update && sudo apt-get install -y nodejs ifstat iotop redis-tools postgresql-client
 
-# Install npms
-cd ~/highload-stats/server && npm install ws
+# Install server
+cd ~/highload-stats/server && npm i
 chmod +x restart.sh server.js
 
 # PS: If need telemetry stats disks
@@ -30,7 +30,7 @@ sudo apt install smartmontools
 * open in browser `http://remote.host.io:3939/e3b0c44...852b855`
 
 ## Debug 
-* back-end - run console `sudo ./server/server.js debug`
+* back-end - run console `sudo ./server/server.js debug` or only `info|warn|error|msg`
 * frond-end - `./web/external/common.js` => `debug: true`
 
 ## Proxy 

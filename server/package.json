@@ -1,0 +1,13 @@
+{
+	"name": "hgls",
+	"version": "1.0.0",
+	"private": true,
+	"description": "Highload-stats",
+	"main": "server.js",
+	"keywords": [],
+	"author": "Oxmix",
+	"license": "ISC",
+	"dependencies": {
+		"ws": "^1.1.5"
+	}
+}

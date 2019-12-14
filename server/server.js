@@ -4,7 +4,7 @@ var port = 3939;
 
 process.title = 'highload-stats';
 
-var debug = process.argv[2] === 'debug';
+var debug = process.argv[2];
 
 var crypto = require('crypto'),
 	wss = require('ws'),
@@ -62,8 +62,8 @@ var app = http.createServer(function (req, res) {
 	}
 
 	var action = routers[req.url];
-
-	log('info', 'Router action: ' + action);
+	if (typeof action !== 'function')
+		log('info', 'Router action: ' + action);
 
 	if (typeof action === 'function') {
 		res.writeHead(200);
@@ -756,6 +756,7 @@ var fpmStats = function () {
 			try {
 				fpm = JSON.parse(fpm);
 			} catch (e) {
+				setTimeout(fpmStats, 1000);
 				log('error', 'fpm json parse failed');
 				return;
 			}
@@ -853,7 +854,7 @@ var historySave = function (event, data) {
 			if (err)
 				log('warn', 'Failed save history: ' + err);
 
-			log('info', 'Save history event: ' + data.event);
+			log('info', 'Save history event: ' + event);
 		});
 };
 setInterval(function () {
@@ -905,6 +906,9 @@ function log(type, msg) {
 		default:
 			color = '\u001b[0m'
 	}
+
+	if (debug !== 'debug' && debug !== type)
+		return;
 
 	console.log('[' + (new Date()).toString() + ']' + color + ' [' + type + '] ' + reset + msg);
 }
