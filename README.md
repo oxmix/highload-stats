@@ -55,13 +55,13 @@ server {
 }
 ```
 
-### Setting PgBouncer
+## Setting PgBouncer
 ```bash
 echo '"pgbouncer" ""' >> /etc/pgbouncer/userlist.txt \
 && systemctl restart pgbouncer
 ```
 
-### Enable stats for Nginx and FPM
+## Enable stats for Nginx and FPM
 * Nginx add server
 ```nginx
 server {
