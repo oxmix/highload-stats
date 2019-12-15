@@ -121,6 +121,10 @@ var highLoad = (function () {
 						e.d.forEach(function (v, k) {
 							if (!(k in self.data[e.e]))
 								self.data[e.e][k] = [];
+
+							if (+v[1] > 3600 && k === 'runtime avg')
+								return;
+
 							self.data[e.e][k].push([e.t, +v[1]]);
 						});
 						break;
