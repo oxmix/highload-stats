@@ -1,10 +1,7 @@
 #!/usr/bin/env nodejs
 
-var port = 3939;
-
-process.title = 'highload-stats';
-
-var debug = process.argv[2];
+var port = 3939,
+	processName = 'highload-stats';
 
 var crypto = require('crypto'),
 	wss = require('ws'),
@@ -13,12 +10,40 @@ var crypto = require('crypto'),
 	fs = require('fs'),
 	http = require('http');
 
+var debug = null;
+switch (process.argv[2]) {
+	case 'start':
+		console.log('Start hgls');
+		exec(__dirname + '/server.js error > ' + __dirname + '/hgls-error.log 2>&1 &');
+		return;
+
+	case 'stop':
+		console.log('Kill hgls');
+		exec('killall ' + processName);
+		return;
+
+	case 'restart':
+		console.log('Restart hgls');
+		exec('killall ' + processName);
+		exec(__dirname + '/server.js error > ' + __dirname + '/hgls-error.log 2>&1 &');
+		return;
+
+	case 'debug':
+	case 'info':
+	case 'warn':
+	case 'error':
+		debug = process.argv[2];
+		break;
+}
+
+process.title = processName;
+
 var accessKey = '';
 try {
 	var accessFile = __dirname + '/.access-key';
 	if (fs.existsSync(accessFile)) {
 		fs.readFile(accessFile, 'utf8', function (err, data) {
-			log('info', 'Access key detected');
+			log('info', '[access] key detected');
 			accessKey = data.trim();
 		})
 	}
@@ -29,7 +54,7 @@ var app = http.createServer(function (req, res) {
 	if (accessKey.length > 0 && req.url.indexOf(accessKey) === -1) {
 		res.writeHead(403);
 		res.end('highload-stats: 403');
-		log('warn', 'Failed check access key');
+		log('warn', '[web] 403: check access key');
 		return;
 	}
 
@@ -63,7 +88,7 @@ var app = http.createServer(function (req, res) {
 
 	var action = routers[req.url];
 	if (typeof action !== 'function')
-		log('info', 'Router action: ' + action);
+		log('info', '[web] router action: ' + action);
 
 	if (typeof action === 'function') {
 		res.writeHead(200);
@@ -75,8 +100,8 @@ var app = http.createServer(function (req, res) {
 		if (err) {
 			res.writeHead(404);
 			res.end('highload-stats: 404');
-			if (debug)
-				return log('error', err);
+			log('warn', '[web] 404: ' + err);
+			return;
 		}
 		res.writeHead(200);
 		res.end(data);
@@ -92,7 +117,7 @@ var webSocketServer = new wss.Server({server: app});
 webSocketServer.on('connection', function (ws) {
 	var id = crypto.createHash('md5').update(Math.random() + '.' + (new Date).getTime()).digest('hex');
 
-	log('info', 'open – ' + id);
+	log('info', '[ws] new connect, id: ' + id);
 
 	if (!connection[id]) {
 		connection[id] = {
@@ -114,17 +139,16 @@ webSocketServer.on('connection', function (ws) {
 	}
 
 	ws.on('message', function (json) {
-
 		try {
 			var obj = JSON.parse(json);
 		} catch (e) {
-			return log('error', 'JSON parse error - ' + e);
+			return log('error', '[ws] json parse error: ' + e);
 		}
 
 		if (!obj || !connection[obj.id])
 			return;
 
-		log('msg', obj.id + ' - ' + json);
+		log('info', '[ws] message: ' + json);
 
 		if (obj.command === 'ping')
 			send({
@@ -171,24 +195,24 @@ webSocketServer.on('connection', function (ws) {
 			delete connection[id];
 		}
 		sendActiveConnection();
-		log('info', 'close – ' + id);
+		log('info', '[ws] close id: ' + id);
 	});
 
-	ws.on('pong', function (key, options, dontFailWhenClosed) {
+	ws.on('pong', function (key) {
 		if (connection[key])
 			connection[key].time.pong = (new Date).getTime();
 	});
 
 	ws.on('disconnect', function () {
-		log('warn', 'ws disconnecting');
+		log('warn', '[ws] disconnecting');
 	});
 
 	ws.on('error', function (error) {
-		log('error', 'ws.error => ' + error);
+		log('error', '[ws] error: ' + error);
 	});
 });
 
-log('info', 'WS server start, port: ' + port + ' / pid: ' + process.pid);
+log('info', '[ws] server start, port: ' + port + ' pid: ' + process.pid);
 
 var sendActiveConnection = function (from) {
 	var online = {},
@@ -250,7 +274,7 @@ setInterval(function () {
 			connection[key].socket.terminate();
 			delete connection[key];
 			sendActiveConnection();
-			log('warn', 'close timeout – ' + key);
+			log('warn', '[ws] close timeout, id: ' + key);
 		}
 
 		if (connection[key]) {
@@ -260,7 +284,7 @@ setInterval(function () {
 		}
 	}
 
-	log('info', 'Quantity sent ping: ' + quantityPing);
+	log('info', '[hgls] quantity sent ping: ' + quantityPing);
 
 }, 15000);
 
@@ -279,7 +303,7 @@ setInterval(function () {
 			infoMem.push(s + ': ' + Math.round(pmu[s] / 1024) + 'Kb');
 		}
 
-		log('info', 'Memory usage ' + infoMem.join(' / '));
+		log('info', '[hgls] memory usage ' + infoMem.join(' / '));
 	}, 10000);
 }());
 
@@ -518,7 +542,7 @@ var mysqlMem = {};
 var mysqlInterval = setInterval(function () {
 	var mysql = spawn('mysql', ['-e', sqlQuery]);
 	mysql.on('error', function () {
-		log('warn', 'Mysql client not found')
+		log('warn', '[mysql] client not found');
 		clearInterval(mysqlInterval);
 	});
 	mysql.stdout.on('data', function (data) {
@@ -690,14 +714,20 @@ var nginxStats = function () {
 		path: '/hgls-nginx'
 	}, function (res) {
 		if (res.statusCode !== 200) {
-			log('error', 'nginx get status: ' + res.statusCode);
+			log('error', '[nginx] get status: ' + res.statusCode);
 			setTimeout(nginxStats, 1000 * 60);
 			return;
 		}
+
+		var data = '';
 		res.on('data', function (chunk) {
-			var ngx = chunk.toString().match(/([0-9]+)/gm);
+			data += chunk;
+		});
+
+		res.on('end', function () {
+			var ngx = data.match(/([0-9]+)/gm);
 			if (!ngx) {
-				log('error', 'nginx regex failed');
+				log('error', '[nginx] regex failed');
 				return;
 			}
 
@@ -727,7 +757,8 @@ var nginxStats = function () {
 			setTimeout(nginxStats, 1000);
 		});
 	}).on('error', function (e) {
-		log('error', 'get http nginx: ' + e.message);
+		log('error', '[nginx] get http: ' + e.message);
+		setTimeout(nginxStats, 1000 * 60);
 	});
 };
 nginxStats();
@@ -741,57 +772,61 @@ var fpmStats = function () {
 		path: '/hgls-fpm?full&json'
 	}, function (res) {
 		if (res.statusCode !== 200) {
-			log('warn', 'fpm get status: ' + res.statusCode);
+			log('warn', '[fpm] get status: ' + res.statusCode);
 			setTimeout(fpmStats, 1000 * 60);
 			return;
 		}
 
+		var data = '';
 		res.on('data', function (chunk) {
-			var fpmJs = chunk.toString();
+			data += chunk;
+		});
 
+		res.on('end', function () {
 			try {
-				var fpm = JSON.parse(fpmJs);
-
-				var runtime = 0,
-					quantity = 0;
-				fpm.processes.forEach(function (e) {
-					if (e.state.toLowerCase() !== 'running')
-						return;
-					runtime += e['request duration'];
-					quantity++;
-				});
-
-				var charts = [
-					['active processes', fpm['active processes']],
-					['idle processes', fpm['idle processes']],
-					['slow requests', fpm['slow requests'] - fpmMem['slow requests'] || 0],
-					['accepted conn', fpm['accepted conn'] - fpmMem['accepted conn'] || 0],
-					[
-						'runtime avg',
-						quantity > 0 && runtime > 0 ? (runtime / quantity / 1e6).toFixed(3) : 0
-					]
-				];
-				fpmMem['slow requests'] = fpm['slow requests'];
-				fpmMem['accepted conn'] = fpm['accepted conn'];
-
-				send({
-					data: {
-						event: 'fpm',
-						charts: charts
-					}
-				});
-
-				historySave('fpm', charts);
-
-				setTimeout(fpmStats, 1000);
-
+				var fpm = JSON.parse(data);
 			} catch (e) {
-				log('warn', 'fpm json parse failed: ' + e.toString());
+				log('warn', '[fpm] json parse failed: ' + e.toString());
 				setTimeout(fpmStats, 1000 * 10);
+				return;
 			}
+
+			var runtime = 0,
+				quantity = 0;
+			fpm.processes.forEach(function (e) {
+				if (e['request uri'].indexOf('/hgls-fpm') !== -1)
+					return;
+				runtime += e['request duration'];
+				quantity++;
+			});
+
+			var charts = [
+				['active processes', fpm['active processes']],
+				['idle processes', fpm['idle processes']],
+				['slow requests', fpm['slow requests'] - fpmMem['slow requests'] || 0],
+				['accepted conn', fpm['accepted conn'] - fpmMem['accepted conn'] || 0],
+				[
+					'runtime avg',
+					quantity > 0 && runtime > 0 ? (runtime / quantity / 1e6).toFixed(3) : 0
+				]
+			];
+			fpmMem['slow requests'] = fpm['slow requests'];
+			fpmMem['accepted conn'] = fpm['accepted conn'];
+
+			send({
+				data: {
+					event: 'fpm',
+					charts: charts
+				}
+			});
+
+			historySave('fpm', charts);
+
+			setTimeout(fpmStats, 1000);
 		});
 	}).on('error', function (e) {
-		log('error', 'get http fpm: ' + e.message);
+		log('error', '[fpm] get http: ' + e.message);
+		setTimeout(fpmStats, 1000 * 60);
 	});
 };
 fpmStats();
@@ -847,9 +882,9 @@ var historySave = function (event, data) {
 	fs.appendFile(historyFile, row + "\n",
 		function (err) {
 			if (err)
-				log('warn', 'Failed save history: ' + err);
+				log('warn', '[history] failed save: ' + err);
 
-			log('info', 'Save history event: ' + event);
+			log('info', '[history] save event: ' + event);
 		});
 };
 setInterval(function () {
@@ -860,7 +895,7 @@ setInterval(function () {
 	exec('tail -n ' + limitRows + ' ' + historyFile + ' > ' + historyFile + '.tmp', function (error, stdout, stderr) {
 		if (error) {
 			historyLock = false;
-			log('warn', 'Failed cleaning history: ' + error);
+			log('warn', '[history] cleaning failed: ' + error);
 			return;
 		}
 		exec('rm ' + historyFile + ' && mv ' + historyFile + '.tmp ' + historyFile, function () {
@@ -868,7 +903,7 @@ setInterval(function () {
 		});
 	});
 
-	log('info', 'Trim history file, limit rows: ' + limitRows);
+	log('info', '[history] trim file, limit rows: ' + limitRows);
 }, 15 * 60 * 1000);
 
 /**
