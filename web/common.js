@@ -216,11 +216,16 @@ var highLoad = (function () {
 
 					++self.graffCount8;
 					data.charts.forEach(function (e, k) {
-						chart.series[k].addPoint([time, parseFloat(e[1])], true,
-							(self.graffCount8 >= self.graffMax), true);
+						var val = parseFloat(e[1]);
 
-						if (e[0] === 'runtime avg')
-							chart.setTitle({text: 'FPM: ' + e[1]});
+						if (e[0] === 'runtime avg') {
+							chart.setTitle({text: 'FPM: ' + val});
+							if (val > 3600)
+								val = 0;
+						}
+
+						chart.series[k].addPoint([time, val], true,
+							(self.graffCount8 >= self.graffMax), true);
 					});
 				}
 			}

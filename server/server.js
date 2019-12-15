@@ -58,10 +58,19 @@ var app = http.createServer(function (req, res) {
 		return;
 	}
 
-	if (accessKey.length > 0)
+	var location;
+	if (accessKey.length > 0) {
+		location = '/highload-stats/' + accessKey + '/';
 		req.url = req.url.replace('/highload-stats/' + accessKey, '');
-	else
+	} else {
+		location = '/highload-stats/';
 		req.url = req.url.replace('/highload-stats', '');
+	}
+
+	if (!req.url.length) {
+		res.writeHead(301, {Location: location});
+		return res.end();
+	}
 
 	var routers = {
 		'/': 'web/index.html',

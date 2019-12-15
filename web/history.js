@@ -122,7 +122,7 @@ var highLoad = (function () {
 							if (!(k in self.data[e.e]))
 								self.data[e.e][k] = [];
 
-							if (+v[1] > 3600 && k === 4)
+							if (v[0] === 'runtime avg' && +v[1] > 3600)
 								return;
 
 							self.data[e.e][k].push([e.t, +v[1]]);
