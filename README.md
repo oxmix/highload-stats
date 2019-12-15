@@ -10,13 +10,12 @@ cd ~ && git clone https://github.com/oxmix/highload-stats.git
 ```
 * Install nodejs and sysutils
 ```bash
-curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
-sudo apt-get update && sudo apt-get install nodejs ifstat iotop
+curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash - \
+&& sudo apt-get update && sudo apt-get install nodejs ifstat iotop
 ```
-* Install server
+* Install node depends
 ```bash
-cd ~/highload-stats/server && npm i
-chmod +x server.js
+cd ~/highload-stats/server && chmod +x server.js && npm i
 ```
 * If need postgres, redis, mysql
 ```bash
@@ -58,10 +57,8 @@ server {
 
 ### Setting PgBouncer
 ```bash
-echo '"pgbouncer" ""' >> /etc/pgbouncer/userlist.txt
-```
-```bash
-systemctl restart pgbouncer
+echo '"pgbouncer" ""' >> /etc/pgbouncer/userlist.txt \
+&& systemctl restart pgbouncer
 ```
 
 ### Enable stats for Nginx and FPM
@@ -98,5 +95,5 @@ sed -i 's/;pm.status_path = \/status/pm.status_path = \/hgls-fpm/' /etc/php/X.X/
 ```
 * Then
 ```bash
-systemctl restart nginx -s reload && phpX.X-fpm
+nginx -s reload && systemctl restart phpX.X-fpm
 ```
