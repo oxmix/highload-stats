@@ -171,6 +171,13 @@ $(function () {
 			},
 			spline: {
 				connectNulls: true
+			},
+			series: {
+				states: {
+					inactive: {
+						opacity: 1
+					}
+				}
 			}
 		},
 		background2: '#f0f0ea'
@@ -183,7 +190,7 @@ $(function () {
 			chart: {
 				renderTo: 'bandwidth',
 				type: 'spline',
-				animation: Highcharts.svg,
+				animation: false,
 				zoomType: 'x'
 			},
 			title: {
@@ -268,7 +275,7 @@ $(function () {
 			chart: {
 				renderTo: 'io-disk',
 				type: 'spline',
-				animation: Highcharts.svg,
+				animation: false,
 				zoomType: 'x'
 			},
 			title: {
@@ -359,7 +366,7 @@ $(function () {
 			chart: {
 				renderTo: 'memory',
 				type: 'spline',
-				animation: Highcharts.svg,
+				animation: false,
 				zoomType: 'x'
 			},
 			title: {
@@ -400,6 +407,15 @@ $(function () {
 						hover: {
 							enabled: false
 						}
+					},
+					dataGrouping: {
+						approximation: 'average',
+						units: [
+							['minute', [1]]
+						],
+						forced: true,
+						enabled: true,
+						groupAll: true
 					}
 				}
 			},
@@ -422,7 +438,7 @@ $(function () {
 			chart: {
 				renderTo: 'cpu',
 				type: 'spline',
-				animation: Highcharts.svg,
+				animation: false,
 				zoomType: 'x'
 			},
 			title: {
@@ -488,7 +504,7 @@ $(function () {
 			chart: {
 				renderTo: 'space',
 				type: 'spline',
-				animation: Highcharts.svg,
+				animation: false,
 				zoomType: 'x'
 			},
 			title: {
@@ -556,7 +572,7 @@ $(function () {
 			chart: {
 				renderTo: 'mysql',
 				type: 'spline',
-				animation: Highcharts.svg,
+				animation: false,
 				zoomType: 'x'
 			},
 			title: {
@@ -568,18 +584,13 @@ $(function () {
 			},
 			yAxis: {
 				title: {
-					text: 'quantity'
+					text: 'queries'
 				},
 				plotLines: [{
 					value: 0,
 					width: 1,
 					color: '#808080'
 				}],
-				labels: {
-					formatter: function () {
-						return this.value;
-					}
-				},
 				min: 0,
 				tickPixelInterval: 25
 			},
@@ -626,7 +637,7 @@ $(function () {
 			chart: {
 				renderTo: 'redis',
 				type: 'spline',
-				animation: Highcharts.svg,
+				animation: false,
 				zoomType: 'x'
 			},
 			title: {
@@ -645,11 +656,6 @@ $(function () {
 					width: 1,
 					color: '#808080'
 				}],
-				labels: {
-					formatter: function () {
-						return this.value;
-					}
-				},
 				min: 0,
 				tickPixelInterval: 25
 			},
@@ -666,6 +672,15 @@ $(function () {
 						hover: {
 							enabled: false
 						}
+					},
+					dataGrouping: {
+						approximation: 'average',
+						units: [
+							['minute', [1]]
+						],
+						forced: true,
+						enabled: true,
+						groupAll: true
 					}
 				}
 			},
@@ -673,6 +688,7 @@ $(function () {
 		});
 	};
 
+	// pg bouncer
 	window.pgBouncerHighchart = function () {
 		if (!init.pgBouncer)
 			return;
@@ -692,7 +708,7 @@ $(function () {
 			chart: {
 				renderTo: 'pg-bouncer',
 				type: 'spline',
-				animation: Highcharts.svg,
+				animation: false,
 				zoomType: 'x'
 			},
 			title: {
@@ -704,18 +720,13 @@ $(function () {
 			},
 			yAxis: {
 				title: {
-					text: 'quantity'
+					text: 'queries'
 				},
 				plotLines: [{
 					value: 0,
 					width: 1,
 					color: '#808080'
 				}],
-				labels: {
-					formatter: function () {
-						return this.value;
-					}
-				},
 				min: 0,
 				tickPixelInterval: 25
 			},
@@ -739,6 +750,7 @@ $(function () {
 		});
 	};
 
+	// nginx
 	window.nginxHighchart = function () {
 		if (!init.nginx)
 			return;
@@ -758,7 +770,7 @@ $(function () {
 			chart: {
 				renderTo: 'nginx',
 				type: 'spline',
-				animation: Highcharts.svg,
+				animation: false,
 				zoomType: 'x'
 			},
 			title: {
@@ -777,11 +789,6 @@ $(function () {
 					width: 1,
 					color: '#808080'
 				}],
-				labels: {
-					formatter: function () {
-						return this.value;
-					}
-				},
 				min: 0,
 				tickPixelInterval: 25
 			},
@@ -798,6 +805,15 @@ $(function () {
 						hover: {
 							enabled: false
 						}
+					},
+					dataGrouping: {
+						approximation: 'average',
+						units: [
+							['minute', [1]]
+						],
+						forced: true,
+						enabled: true,
+						groupAll: true
 					}
 				}
 			},
@@ -805,6 +821,7 @@ $(function () {
 		});
 	};
 
+	// fpm
 	window.fpmHighchart = function () {
 		if (!init.fpm)
 			return;
@@ -824,7 +841,7 @@ $(function () {
 			chart: {
 				renderTo: 'fpm',
 				type: 'spline',
-				animation: Highcharts.svg,
+				animation: false,
 				zoomType: 'x'
 			},
 			title: {
