@@ -499,7 +499,7 @@ setInterval(function () {
 setInterval(function () {
 	var space = spawn('df', ['-m', '--total', '--type', 'ext4']);
 	space.stdout.on('data', function (data) {
-		var regex = /(\/dev\/|total).*?[0-9]+[0-9].*?([0-9]+).*?([0-9]+).*?% (.+)/g;
+		var regex = /(\/dev\/|total).*? [0-9]+.*?([0-9]+).*?([0-9]+).*?% (.+)/g;
 		var total = 0;
 		var space = [];
 		var s;
@@ -660,58 +660,59 @@ var redisInterval = setInterval(function () {
 
 // PgBouncer
 var pgBouncerMem = {};
-var pgBouncerInterval = setInterval(function () {
-	exec('sudo -u postgres psql -p 6432 -wU pgbouncer pgbouncer -qAc "SHOW STATS;"',
-		function (error, stdout, stderr) {
-			if (error) {
-				clearInterval(pgBouncerInterval);
-				return;
-			}
-			var rows = stdout.split("\n");
-			rows.pop();
-			rows.pop();
-			var head = rows.shift().split('|');
-			var charts = {
-				sent: 0,
-				received: 0,
-				queries: []
-			};
-			rows.forEach(function (row) {
-				row = row.split('|');
-				var dbName = row[0];
-				if (dbName === 'pgbouncer')
-					return;
+var pgBouncerExec = spawn('sudo', ['-u', 'postgres', 'psql', '-p', '6432', '-wU', 'pgbouncer', 'pgbouncer']);
+pgBouncerExec.stdout.on('data', function (data) {
+	var rows = data.toString().split("\n");
+	rows.pop();
+	rows.pop();
+	var head = rows.shift().split('|');
+	var charts = {
+		sent: 0,
+		received: 0,
+		queries: []
+	};
+	rows.forEach(function (row) {
+		row = row.split('|');
+		var dbName = row[0].trim();
+		if (dbName === 'pgbouncer')
+			return;
 
-				row.forEach(function (val, key) {
-					var name = head[key];
-					if (name === 'total_sent')
-						charts.sent += val - pgBouncerMem[key] || 0;
+		row.forEach(function (val, key) {
+			val = val.trim();
+			var name = head[key].trim();
+			if (name === 'total_sent')
+				charts.sent += val - pgBouncerMem[key] || 0;
 
-					if (name === 'total_received')
-						charts.received += val - pgBouncerMem[key] || 0;
+			if (name === 'total_received')
+				charts.received += val - pgBouncerMem[key] || 0;
 
-					pgBouncerMem[key] = +val;
+			pgBouncerMem[key] = +val;
 
-					if (name === 'total_query_count' || name === 'total_requests') {
-						charts.queries.push({
-							k: dbName,
-							v: val - pgBouncerMem[key + dbName] || 0
-						});
-
-						pgBouncerMem[key + dbName] = +val;
-					}
+			if (name === 'total_query_count' || name === 'total_requests') {
+				charts.queries.push({
+					k: dbName,
+					v: val - pgBouncerMem[key + dbName] || 0
 				});
-			});
 
-			send({
-				data: {
-					event: 'pg-bouncer',
-					charts: charts
-				}
-			});
-
-			historySave('pg-bouncer', charts['queries']);
+				pgBouncerMem[key + dbName] = +val;
+			}
 		});
+	});
+
+	send({
+		data: {
+			event: 'pg-bouncer',
+			charts: charts
+		}
+	});
+
+	historySave('pg-bouncer', charts['queries']);
+});
+pgBouncerExec.stderr.on('data', function () {
+	clearInterval(pgBouncerInterval);
+});
+var pgBouncerInterval = setInterval(function () {
+	pgBouncerExec.stdin.write('SHOW STATS;\n');
 }, 1000);
 
 // Nginx
