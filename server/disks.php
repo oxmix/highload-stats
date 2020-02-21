@@ -50,7 +50,13 @@ class disksPoll {
 			if (empty($disk))
 				continue;
 
-			$src = shell_exec($smartCtl.' -a '.strtok($disk, ' '));
+			// lsi
+			if (stripos($disk, 'megaraid') !== false) {
+				preg_match('/(.+) -d ([a-z0-9,]+) #/si', $disk, $o);
+				$src = shell_exec($smartCtl.' -a -d '.$o[2].' '.$o[1]);
+			} else {
+				$src = shell_exec($smartCtl.' -a '.strtok($disk, ' '));
+			}
 
 			if (empty($src))
 				continue;
