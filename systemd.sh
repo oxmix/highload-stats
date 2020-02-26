@@ -2,6 +2,7 @@
 
 sudo echo '[Unit]
 Description=highload-stats
+After=network-online.target
 
 [Service]
 Type=simple
