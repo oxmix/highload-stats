@@ -69,7 +69,7 @@ class disksPoll {
 		}
 
 		// mdadm
-		foreach (explode(PHP_EOL, shell_exec('ls -1 /dev/md[0-9]')) as $md) {
+		foreach (explode(PHP_EOL, shell_exec('ls -1 /dev/md*[0-9]')) as $md) {
 			if (empty($md))
 				continue;
 			$out[$md] = shell_exec('mdadm -D '.$md);
