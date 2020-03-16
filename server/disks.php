@@ -68,6 +68,13 @@ class disksPoll {
 			$out[$disk]['smarts'] = self::parseSmart($src);
 		}
 
+		// mdadm
+		foreach (explode(PHP_EOL, shell_exec('ls -1 /dev/md[0-9]')) as $md) {
+			if (empty($md))
+				continue;
+			$out[$md] = shell_exec('mdadm -D '.$md);
+		}
+
 		if (file_exists(__DIR__.'/.raid')) {
 			$fgc = file_get_contents(__DIR__.'/.raid');
 			list($dev, $quantity) = explode('=', $fgc, 2);
