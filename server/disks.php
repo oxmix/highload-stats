@@ -81,7 +81,7 @@ class disksPoll {
 		foreach (explode(PHP_EOL, shell_exec('ls -1 /dev/md*[0-9]')) as $md) {
 			if (empty($md))
 				continue;
-			self::$data['mds'] = shell_exec('mdadm -D '.$md);
+			self::$data['mds'][$md] = shell_exec('mdadm -D '.$md);
 		}
 
 		return json_encode(self::$data);
