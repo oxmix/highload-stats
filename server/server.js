@@ -344,8 +344,8 @@ exec("ip route ls 2>&1 | grep default | awk '{print $5}'", function (error, stdo
 var iotop = spawn('iotop', ['-k', '-q', '-o', '-d 1']);
 iotop.stdout.on('data', function (data) {
 	data = data.toString();
-	var r = data.match(/Actual DISK READ.*?([0-9]+.[0-9]+)/),
-		w = data.match(/Actual DISK WRITE.*?([0-9]+.[0-9]+)/),
+	var r = data.match(/(?:Total|Current|Actual) DISK READ.*?([0-9]+.[0-9]+)/),
+		w = data.match(/(?:Total|Current|Actual) DISK WRITE.*?([0-9]+.[0-9]+)/),
 		io = data.match(/%.*([0-9.]+).*%/g);
 
 	var ioPer = 0;
