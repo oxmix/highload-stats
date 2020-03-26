@@ -10,7 +10,7 @@ cd ~ && git clone https://github.com/oxmix/highload-stats.git
 ```
 * Install nodejs and sysutils
 ```bash
-curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash - \
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash - \
 && sudo apt-get update && sudo apt-get install nodejs ifstat iotop
 ```
 * Install node depends
@@ -33,7 +33,7 @@ sudo apt install smartmontools
 
 ## If need only through access by key
 * go to, console # `cd ~/highload-stats/server`
-* create file .access-key in folder ./server, console # `</dev/urandom | fold -w 32 | head -n 1 | sha256sum | awk '{print $1}' > .access_key`
+* create file .access-key in folder ./server, console # `</dev/urandom | fold -w 32 | head -n 1 | sha256sum | awk '{print $1}' > .access-key`
 * now restart, console # `sudo ./server.js restart`
 * open in browser `http://remote.host.io:3939/-access-key-`, your -access-key- in file .access_key
 
