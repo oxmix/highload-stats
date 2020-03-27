@@ -61,7 +61,7 @@ var app = http.createServer(function (req, res) {
 	var location;
 	if (accessKey.length > 0) {
 		location = '/highload-stats/' + accessKey + '/';
-		req.url = req.url.replace('/highload-stats/' + accessKey, '');
+		req.url = req.url.replace('/highload-stats/' + accessKey, '').replace('/' + accessKey, '');
 	} else {
 		location = '/highload-stats/';
 		req.url = req.url.replace('/highload-stats', '');
@@ -549,7 +549,7 @@ var sqlQuery = "SHOW GLOBAL STATUS WHERE Variable_name IN (" +
 	"'Com_alter_table', 'Com_drop_table', 'Created_tmp_tables', 'Created_tmp_disk_tables');";
 var mysqlMem = {};
 var mysqlInterval = setInterval(function () {
-	var mysql = spawn('mysql', ['-e', sqlQuery]);
+	var mysql = spawn('mysql', ['--defaults-extra-file=/root/.my.cnf', '-e', sqlQuery]);
 	mysql.on('error', function () {
 		log('warn', '[mysql] client not found');
 		clearInterval(mysqlInterval);
