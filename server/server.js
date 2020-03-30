@@ -924,16 +924,20 @@ setInterval(function () {
 
 	var h24 = 86400;
 	var limitRows = h24 * historyUseEvents.length / 10;
-	exec('tail -n ' + limitRows + ' ' + historyFile + ' > ' + historyFile + '.tmp', function (error, stdout, stderr) {
-		if (error) {
-			historyLock = false;
-			log('warn', '[history] cleaning failed: ' + error);
-			return;
-		}
-		exec('rm ' + historyFile + ' && mv ' + historyFile + '.tmp ' + historyFile, function () {
-			historyLock = false;
+	try {
+		exec('tail -n ' + limitRows + ' ' + historyFile + ' > ' + historyFile + '.tmp', function (error, stdout, stderr) {
+			if (error) {
+				historyLock = false;
+				log('warn', '[history] cleaning failed: ' + error);
+				return;
+			}
+			exec('rm ' + historyFile + ' && mv ' + historyFile + '.tmp ' + historyFile, function () {
+				historyLock = false;
+			});
 		});
-	});
+	} catch (e) {
+		log('error', '[history exec] failed: ' + e.toString());
+	}
 
 	log('info', '[history] trim file, limit rows: ' + limitRows);
 }, 15 * 60 * 1000);
