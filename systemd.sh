@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 
-sudo echo '[Unit]
+exec=`realpath server/server.js`
+if [ ! -f $exec ]; then
+        echo "Not found path: $exec"
+        exit
+fi
+
+sudo echo "[Unit]
 Description=highload-stats
 After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/root/highload-stats/server/server.js
+ExecStart=$exec
+Restart=always
+RestartSec=60
 
 [Install]
-WantedBy=multi-user.target' > /etc/systemd/system/hgls.service
+WantedBy=multi-user.target" > /etc/systemd/system/hgls.service
 
 sudo chmod 644 /etc/systemd/system/hgls.service
 
