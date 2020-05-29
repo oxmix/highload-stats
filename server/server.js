@@ -321,6 +321,8 @@ exec("ip route ls 2>&1 | grep default | awk '{print $5}'", function (error, stdo
 	var bandwidth = spawn('ifstat', ['-i', stdout.trim(), '-b']);
 	bandwidth.stdout.on('data', function (data) {
 		var bw = data.toString().match(/([0-9.]+).*?([0-9.]+)\n/);
+		if (!(1 in bw) || !(2 in bw))
+			return;
 		send({
 			data: {
 				event: 'bandwidth',
@@ -340,44 +342,55 @@ exec("ip route ls 2>&1 | grep default | awk '{print $5}'", function (error, stdo
 	});
 });
 
-// IO disk stats read/write kBps
-var iotop = spawn('iotop', ['-k', '-q', '-o', '-d 1']);
-iotop.stdout.on('data', function (data) {
-	data = data.toString();
-	var r = data.match(/(?:Total|Current|Actual) DISK READ.*?([0-9]+.[0-9]+)/),
-		w = data.match(/(?:Total|Current|Actual) DISK WRITE.*?([0-9]+.[0-9]+)/),
-		io = data.match(/%.*([0-9.]+).*%/g);
-
-	var ioPer = 0;
-	if (io) {
-		ioPer = io.map(function (val) {
-			return val.replace(/ /g, '').replace(/%/g, '');
-		}).reduce(function (acc, val) {
-			return parseFloat(acc) + parseFloat(val);
-		}, 0);
-	}
-
-	var read = r ? Math.round(r[1] * 1024) : 0;
-	var write = w ? Math.round(w[1] * 1024) : 0;
-
-	send({
-		data: {
-			event: 'io-disk',
-			io: ioPer,
-			charts: [
-				{
-					name: 'read',
-					val: read
-				}, {
-					name: 'write',
-					val: write
-				}
-			]
+// IO disk stats io/read/write
+var ioTopCall = function () {
+	var iotop = spawn('iotop', ['-k', '-q', '-o', '-d 1']);
+	iotop.stderr.on('data', function (data) {
+		log('error', 'io top stderr: ' + data.toString());
+		if (data.toString().indexOf('UnicodeDecodeError') !== -1) {
+			setTimeout(function () {
+				ioTopCall();
+			}, 3000);
 		}
 	});
+	iotop.stdout.on('data', function (data) {
+		data = data.toString();
+		var r = data.match(/(?:Total|Current|Actual) DISK READ.*?([0-9]+.[0-9]+)/),
+			w = data.match(/(?:Total|Current|Actual) DISK WRITE.*?([0-9]+.[0-9]+)/),
+			io = data.match(/%.*([0-9.]+).*%/g);
 
-	historySave('io-disk', [read, write, ioPer]);
-});
+		var ioPer = 0;
+		if (io) {
+			ioPer = io.map(function (val) {
+				return val.replace(/ /g, '').replace(/%/g, '');
+			}).reduce(function (acc, val) {
+				return (parseFloat(acc) + parseFloat(val)).toFixed(2);
+			}, 0);
+		}
+
+		var read = r ? Math.round(r[1] * 1024) : 0;
+		var write = w ? Math.round(w[1] * 1024) : 0;
+
+		send({
+			data: {
+				event: 'io-disk',
+				io: ioPer,
+				charts: [
+					{
+						name: 'read',
+						val: read
+					}, {
+						name: 'write',
+						val: write
+					}
+				]
+			}
+		});
+
+		historySave('io-disk', [read, write, ioPer]);
+	});
+};
+ioTopCall();
 
 // memory
 setInterval(function () {
