@@ -345,19 +345,30 @@ exec("ip route ls 2>&1 | grep default | awk '{print $5}'", function (error, stdo
 // IO disk stats io/read/write
 var ioStatCall = function () {
 	var ioStat = spawn('iostat', ['-xkdH', '1', '-g', 'ALL', '-o', 'JSON']);
+	var buff = '';
 	ioStat.stdout.on('data', function (data) {
-		if (data.indexOf('io-stat') !== -1)
+		data = data.toString();
+		if (data.indexOf('sysstat') !== -1)
 			return;
+
+		buff += data.trim();
+		if (data.trim().substr(-2) !== '},') {
+			return;
+		} else {
+			data = buff;
+			buff = '';
+		}
+
 		try {
-			data = JSON.parse(data.toString().replace('},', '}'));
+			data = JSON.parse(data.replace('},', '}'));
 		} catch (e) {
 			log('warn', '[io-disk] error parse json');
 		}
-		if (!('disk' in data))
+
+		if (!('disk' in data) || !(0 in data['disk']))
 			return;
 
 		data = data['disk'][0];
-
 		var ioPer = Math.round(data['util']);
 		var read = Math.round(data['rkB/s'] * 1024);
 		var write = Math.round(data['wkB/s'] * 1024);
