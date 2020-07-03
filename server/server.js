@@ -363,6 +363,7 @@ var ioStatCall = function () {
 			data = JSON.parse(data.replace('},', '}'));
 		} catch (e) {
 			log('warn', '[io-disk] error parse json');
+			return;
 		}
 
 		if (!('disk' in data) || !(0 in data['disk']))
