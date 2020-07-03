@@ -343,33 +343,24 @@ exec("ip route ls 2>&1 | grep default | awk '{print $5}'", function (error, stdo
 });
 
 // IO disk stats io/read/write
-var ioTopCall = function () {
-	var iotop = spawn('iotop', ['-k', '-q', '-o', '-d 1']);
-	iotop.stderr.on('data', function (data) {
-		log('error', 'io top stderr: ' + data.toString());
-		if (data.toString().indexOf('UnicodeDecodeError') !== -1) {
-			setTimeout(function () {
-				ioTopCall();
-			}, 3000);
+var ioStatCall = function () {
+	var ioStat = spawn('iostat', ['-xkdH', '1', '-g', 'ALL', '-o', 'JSON']);
+	ioStat.stdout.on('data', function (data) {
+		if (data.indexOf('io-stat') !== -1)
+			return;
+		try {
+			data = JSON.parse(data.toString().replace('},', '}'));
+		} catch (e) {
+			log('warn', '[io-disk] error parse json');
 		}
-	});
-	iotop.stdout.on('data', function (data) {
-		data = data.toString();
-		var r = data.match(/(?:Total|Current|Actual) DISK READ.*?([0-9]+.[0-9]+)/),
-			w = data.match(/(?:Total|Current|Actual) DISK WRITE.*?([0-9]+.[0-9]+)/),
-			io = data.match(/%.*([0-9.]+).*%/g);
+		if (!('disk' in data))
+			return;
 
-		var ioPer = 0;
-		if (io) {
-			ioPer = io.map(function (val) {
-				return val.replace(/ /g, '').replace(/%/g, '');
-			}).reduce(function (acc, val) {
-				return (parseFloat(acc) + parseFloat(val)).toFixed(2);
-			}, 0);
-		}
+		data = data['disk'][0];
 
-		var read = r ? Math.round(r[1] * 1024) : 0;
-		var write = w ? Math.round(w[1] * 1024) : 0;
+		var ioPer = Math.round(data['util']);
+		var read = Math.round(data['rkB/s'] * 1024);
+		var write = Math.round(data['wkB/s'] * 1024);
 
 		send({
 			data: {
@@ -390,7 +381,7 @@ var ioTopCall = function () {
 		historySave('io-disk', [read, write, ioPer]);
 	});
 };
-ioTopCall();
+ioStatCall();
 
 // memory
 setInterval(function () {
