@@ -352,7 +352,7 @@ var ioStatCall = function () {
 			return;
 
 		buff += data.trim();
-		if (data.trim().substr(-2) !== '},') {
+		if (data.trim().substr(-2) !== '},' && data.trim().substr(-1) !== '}') {
 			return;
 		} else {
 			data = buff;
@@ -360,7 +360,7 @@ var ioStatCall = function () {
 		}
 
 		try {
-			data = JSON.parse(data.replace('},', '}'));
+			data = JSON.parse(data.replace('},', '}').replace(',{', '{'));
 		} catch (e) {
 			log('warn', '[io-disk] error parse json');
 			return;
