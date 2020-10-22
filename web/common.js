@@ -100,7 +100,14 @@ var highLoad = (function () {
 					if (!chart)
 						return false;
 
-					chart.setTitle({text: 'Space: ' + Math.ceil(data.total / 1024 / 1024) + ' TB'});
+					var total = '';
+					if (total < 1024 * 1024) {
+						total = Math.ceil(data.total / 1024) + ' GB';
+					} else {
+						total = Math.ceil(data.total / 1024 / 1024) + ' TB';
+					}
+
+					chart.setTitle({text: 'Space: ' + total});
 
 					var section = {};
 					var categories = [];
