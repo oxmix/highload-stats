@@ -569,7 +569,8 @@ $(function () {
 				tickPixelInterval: 25
 			},
 			legend: {
-				enabled: true
+				enabled: true,
+				maxHeight: 55
 			},
 			plotOptions: {
 				series: {
