@@ -619,9 +619,25 @@ var mysqlInterval = setInterval(function () {
 							v: val - mysqlMem[key] || 0
 						});
 						mysqlMem[key] = val;
+
+						charts['queries'].push({
+							k: 'slaves latency',
+							v: mysqlMem['slaves latency']
+						});
 						break;
 				}
 			});
+
+			var slavesLatency = 0;
+			exec('mysql --defaults-extra-file=/root/.my.cnf -e "SHOW SLAVE STATUS\\G"',
+				function (error, stdout, stderr) {
+					var sbm = stdout.match(/Seconds_Behind_Master: (\d+)/gm);
+					sbm.forEach(function (value) {
+						var keyVal = value.split(/: /);
+						slavesLatency += parseInt(keyVal[1]);
+					});
+					mysqlMem['slaves latency'] = slavesLatency;
+				});
 
 			send({
 				data: {

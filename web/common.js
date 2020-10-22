@@ -74,7 +74,7 @@ var highLoad = (function () {
 						return false;
 
 					chart.setTitle({
-						text: 'Ram: ' + Math.ceil(data.totalRam / 1024 / 1024) + ' GB'
+						text: 'RAM: ' + Math.ceil(data.totalRam / 1024 / 1024) + ' GB'
 							+ ' + Swap: ' + Math.ceil(data.totalSwap / 1024 / 1024) + ' GB'
 					});
 					chart.series[0].setData(data.charts, true);
@@ -87,7 +87,7 @@ var highLoad = (function () {
 						return false;
 					}
 
-					chart.setTitle({text: 'Load ' + data.charts.length + ' CPUs: ' + data.avg + ' %'});
+					chart.setTitle({text: 'Cores ' + data.charts.length + ' load: ' + data.avg + ' %'});
 
 					++self.graffCount3;
 					data.charts.forEach(function (percent, k) {
@@ -508,7 +508,7 @@ $(function () {
 			type: 'pie'
 		},
 		title: {
-			text: 'Ram ... GB + Swap ... GB'
+			text: 'RAM ... GB + Swap ... GB'
 		},
 		tooltip: {
 			enabled: false
@@ -551,7 +551,7 @@ $(function () {
 				animation: Highcharts.svg
 			},
 			title: {
-				text: 'Load CPUs'
+				text: 'Load CPU'
 			},
 			xAxis: {
 				type: 'datetime',

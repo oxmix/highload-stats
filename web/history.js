@@ -370,7 +370,7 @@ $(function () {
 				zoomType: 'x'
 			},
 			title: {
-				text: 'Ram ' + Math.ceil(memory.totalRam / 1024 / 1024) + ' GB'
+				text: 'RAM ' + Math.ceil(memory.totalRam / 1024 / 1024) + ' GB'
 					+ (memory.totalSwap > 0 ? ' + Swap ' + Math.ceil(memory.totalSwap / 1024 / 1024) + ' GB' : '')
 			},
 			xAxis: {
@@ -442,7 +442,7 @@ $(function () {
 				zoomType: 'x'
 			},
 			title: {
-				text: 'Load CPU'
+				text: 'Cores load'
 			},
 			xAxis: {
 				type: 'datetime',
@@ -500,6 +500,13 @@ $(function () {
 			});
 		});
 
+		var total = '';
+		if (total < 1024 * 1024) {
+			total = Math.ceil(space.total / 1024) + ' GB';
+		} else {
+			total = Math.ceil(space.total / 1024 / 1024) + ' TB';
+		}
+
 		new Highcharts.Chart({
 			chart: {
 				renderTo: 'space',
@@ -508,7 +515,7 @@ $(function () {
 				zoomType: 'x'
 			},
 			title: {
-				text: 'Space ' + Math.ceil(space.total / 1024 / 1024) + ' TB'
+				text: 'Space ' + total
 			},
 			xAxis: {
 				type: 'datetime',
