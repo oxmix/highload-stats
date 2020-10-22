@@ -619,13 +619,12 @@ var mysqlInterval = setInterval(function () {
 							v: val - mysqlMem[key] || 0
 						});
 						mysqlMem[key] = val;
-
-						charts['queries'].push({
-							k: 'slaves latency',
-							v: mysqlMem['slaves latency']
-						});
 						break;
 				}
+			});
+			charts['queries'].push({
+				k: 'slaves latency',
+				v: mysqlMem['slaves latency']
 			});
 
 			var slavesLatency = 0;
