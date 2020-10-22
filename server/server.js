@@ -631,6 +631,8 @@ var mysqlInterval = setInterval(function () {
 			exec('mysql --defaults-extra-file=/root/.my.cnf -e "SHOW SLAVE STATUS\\G"',
 				function (error, stdout, stderr) {
 					var sbm = stdout.match(/Seconds_Behind_Master: (\d+)/gm);
+					if (!sbm)
+						return;
 					sbm.forEach(function (value) {
 						var keyVal = value.split(/: /);
 						slavesLatency += parseInt(keyVal[1]);
