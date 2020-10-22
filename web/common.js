@@ -87,7 +87,7 @@ var highLoad = (function () {
 						return false;
 					}
 
-					chart.setTitle({text: 'Load CPUs: ' + data.avg + ' %'});
+					chart.setTitle({text: 'Load ' + data.charts.length + ' CPUs: ' + data.avg + ' %'});
 
 					++self.graffCount3;
 					data.charts.forEach(function (percent, k) {
