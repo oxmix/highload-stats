@@ -351,8 +351,8 @@ var ioStatCall = function () {
 		if (data.indexOf('sysstat') !== -1)
 			return;
 
-		buff += data.trim();
-		if (data.trim().substr(-2) !== '},' && data.trim().substr(-1) !== '}') {
+		buff += data.trim().replace(/\n/g, '').replace(/\t/g, '');
+		if (buff.trim().substr(-3) !== '}]}' && buff.trim().substr(-4) !== '}]},') {
 			return;
 		} else {
 			data = buff;

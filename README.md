@@ -10,7 +10,7 @@ cd ~ && git clone https://github.com/oxmix/highload-stats.git
 ```
 * Install nodejs and sysutils
 ```bash
-curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash - \
+curl -sL https://deb.nodesource.com/setup_15.x | sudo -E bash - \
 && sudo apt-get update && sudo apt-get install nodejs ifstat sysstat 
 ```
 * Install node depends
