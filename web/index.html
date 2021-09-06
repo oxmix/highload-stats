@@ -4,33 +4,76 @@
 	<meta charset="utf-8">
 	<title>highload-stats</title>
 	<script src="jquery.js"></script>
-	<script src="highcharts.js"></script>
+	<script src="chart.js"></script>
 	<script src="common.js"></script>
 	<link href="common.css" type="text/css" rel="stylesheet">
 </head>
 <body>
-<div class="info">
-	<h3>highload-stats
-		• <a href="#" onclick="window.location.href = window.location.href + 'history'; return false;">
-			go to history 24</a>
-		• <a href="https://github.com/oxmix/highload-stats" target="_blank">git</a></h3>
-	<div>
-		<span id="stats-connections"></span>
-		<span id="stats-ping-pong"></span>
+<section class="menu">
+	<div class="servers-labels"></div>
+	<section class="info">
+		<h3>highload-stats • <a href="https://github.com/oxmix/highload-stats" target="_blank">git</a></h3>
+		<div id="stats"></div>
+	</section>
+</section>
+<section class="content">
+	<div class="buttons">
+		<span data-rel="real-time" class="active">Real-time</span>
+		<span data-rel="disks">Disks</span>
+		<span data-rel="history">History</span>
 	</div>
-	<div id="stats-server"></div>
-</div>
-<div class="graphics">
-	<div id="bandwidth" style="height: 300px;"></div>
-	<div id="io-disk" style="height: 300px;"></div>
-	<div id="ram" style="height: 300px;"></div>
-	<div id="cpu" style="height: 300px;"></div>
-	<div id="space" style="height: 300px;"></div>
-	<div id="mysql" style="height: 300px;"></div>
-	<div id="redis" style="height: 300px;"></div>
-	<div id="pg-bouncer" style="height: 300px;"></div>
-	<div id="nginx" style="height: 300px;"></div>
-	<div id="fpm" style="height: 300px;"></div>
-</div>
+	<section class="real-time active">
+		<div class="info">...</div>
+		<div class="graphics">
+			<div id="cpu" class="not-hide"><canvas></canvas></div>
+			<div id="memory" class="not-hide"><canvas></canvas></div>
+			<div id="io-disk" class="not-hide"><canvas></canvas></div>
+			<div id="bandwidth" class="not-hide"><canvas></canvas></div>
+			<div id="space" class="not-hide"><canvas></canvas></div>
+			<div id="gpu-util"><canvas></canvas></div>
+			<div id="gpu-heal"><canvas></canvas></div>
+			<div id="docker-cpu"><canvas></canvas></div>
+			<div id="docker-mem"><canvas></canvas></div>
+			<div id="mysql"><canvas></canvas></div>
+			<div id="redis"><canvas></canvas></div>
+			<div id="pg-bouncer"><canvas></canvas></div>
+			<div id="nginx"><canvas></canvas></div>
+			<div id="fpm"><canvas></canvas></div>
+			<div class="placeholder not-hide"></div><div class="placeholder not-hide"></div>
+			<div class="placeholder not-hide"></div><div class="placeholder not-hide"></div>
+		</div>
+	</section>
+
+	<section class="disks">
+		<div>In work process collecting ...</div>
+	</section>
+
+	<section class="history">
+		<ul>
+			<li data-range="-15 minute" class="active">15M</li>
+			<li data-range="-30 minute">30M</li>
+			<li data-range="-1 hour">1H</li>
+			<li data-range="-3 hour">3H</li>
+			<li data-range="-6 hour">6H</li>
+			<li data-range="-12 hour">12H</li>
+			<li data-range="-24 hour">24H</li>
+		</ul>
+
+		<div class="cpu"><canvas></canvas></div>
+		<div class="memory"><canvas></canvas></div>
+		<div class="io-disk"><canvas></canvas></div>
+		<div class="bandwidth"><canvas></canvas></div>
+		<div class="space"><canvas></canvas></div>
+		<div class="gpu-util"><canvas></canvas></div>
+		<div class="gpu-heal"><canvas></canvas></div>
+		<div class="docker-cpu"><canvas></canvas></div>
+		<div class="docker-mem"><canvas></canvas></div>
+		<div class="mysql"><canvas></canvas></div>
+		<div class="redis"><canvas></canvas></div>
+		<div class="pg-bouncer"><canvas></canvas></div>
+		<div class="nginx"><canvas></canvas></div>
+		<div class="fpm"><canvas></canvas></div>
+	</section>
+</section>
 </body>
 </html>

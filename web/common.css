@@ -1,49 +1,212 @@
+html, body, section.menu {
+	height: 100%;
+}
+
 body {
+	display: flex;
 	margin: 0;
-	font-size: 10px;
-	font-family: monospace;
+	font-size: 13px;
+	font-family: -apple-system, Helvetica, Arial, sans-serif;
+	/*
+	monospace
+	 */
 }
 
-.graphics > div {
-	box-sizing: border-box;
-	float: left;
-	width: 450px;
-	height: 300px;
-	margin: 5px 0;
-	display: block;
-	content: ' ';
+body > section {
+	overflow: auto;
+	position: relative;
 }
 
-.graphics:after {
-	display: block;
-	content: '';
-	clear: both;
-}
-
-.graphics > div#mysql,
-.graphics > div#redis,
-.graphics > div#pg-bouncer,
-.graphics > div#nginx,
-.graphics > div#fpm {
-	display: none;
-}
-
-.info {
-	color: grey;
+section.info {
 	text-align: center;
-	margin: 15px;
-	height: 60px;
+	color: grey;
+	position: absolute;
+	bottom: 10px;
+	left: 0;
+	right: 0;
 }
 
-.info a,
-.info a:visited {
+section.info h3 {
+	margin: 10px 0 10px;
+}
+
+section.info a,
+section.info a:visited {
 	color: grey;
 }
 
-.info a:hover {
+section.info a:hover {
 	text-decoration: none;
 }
 
-.info div {
-	margin-bottom: 5px;
+section.info #stats {
+	font-size: .8em;
+	font-family: monospace;
+	line-height: 15px;
+}
+
+section.menu {
+	width: 250px;
+	min-width: 250px;
+	background-color: #eee;
+	font-size: 1em;
+}
+
+section.menu .servers-labels {
+	width: 100%;
+	margin-top: 20px;
+	font-size: 1.2em;
+	height: calc(100% - 130px);
+	overflow: auto;
+}
+
+section.menu .servers-labels div {
+	display: flex;
+	cursor: pointer;
+}
+
+section.menu .servers-labels div > span {
+	display: inline-block;
+	border-radius: 10px;
+	padding: 5px 10px;
+	box-sizing: border-box;
+	margin: 10px;
+	color: white;
+	background-color: #6f6f6f;
+	text-overflow: ellipsis;
+	max-width: calc(100% - 20px);
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+section.menu .servers-labels div.selected {
+	background-color: white;
+}
+
+section.menu .servers-labels div.selected > span {
+	background-color: deeppink;
+}
+
+section.menu .servers-labels div:not(.selected):hover {
+	background-color: #ddd;
+}
+
+section.content {
+	width: 100%;
+}
+
+section.content .buttons {
+	margin: 20px;
+	font-size: 1.2em;
+	color: dimgrey;
+	display: flex;
+}
+
+section.content .buttons span {
+	display: inline-block;
+	border-radius: 10px;
+	padding: 5px 10px;
+	background-color: #6f6f6f;
+	color: white;
+	margin-right: 10px;
+	cursor: pointer;
+}
+
+section.content .buttons span.active {
+	background-color: deeppink;
+}
+
+section.content > section {
+	display: none;
+}
+
+section.content > section.active {
+	display: block;
+}
+
+section.content h3 {
+	margin: 20px;
+	font-size: 1.3em;
+	color: dimgrey;
+}
+
+section.content .real-time .info {
+	min-height: 66px;
+	color: gray;
+	margin: 10px 20px 20px;
+	line-height: 22px;
+}
+
+section.content .real-time .graphics {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-evenly;
+}
+
+section.content .real-time .graphics > div {
+	padding: 0 10px;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 490px;
+	height: 300px;
+	margin: 5px 0 20px;
+}
+
+section.content .real-time .graphics .placeholder {
+	width: 100%;
+	height: auto;
+	margin: 0;
+}
+
+section.content .real-time .graphics > div:not(.not-hide) {
+	display: none;
+}
+
+section.content .disks > div {
+	margin: 0 20px 20px;
+}
+
+section.content .history > div {
+	width: 100%;
+	height: 300px;
+	padding: 20px 30px 0 10px;
+	box-sizing: border-box;
+	display: none;
+}
+
+section.content .history ul {
+	list-style: none;
+	display: inline-block;
+	margin: 5px 20px 0;
+	padding: 0;
+}
+
+section.content .history ul li {
+	display: inline-block;
+	background-color: #6f6f6f;
+	color: white;
+	padding: 5px 10px;
+	border-radius: 10px;
+	margin-right: 5px;
+	cursor: pointer;
+}
+section.content .history ul li.active {
+	background-color: deeppink;
+}
+
+section.content .history ul li.loading {
+	background-color: deeppink;
+	animation: loadingBlink 2s infinite;
+}
+
+@keyframes loadingBlink {
+	0% {
+		background-color: #6f6f6f;
+	}
+	50% {
+		background-color: deeppink;
+	}
+	100% {
+		background-color: #6f6f6f;
+	}
 }

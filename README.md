@@ -1,113 +1,60 @@
 # highload-stats
-HGLS Statistics server in real-time graphs, light powerful stats.
-![Preview](web/preview/latest.png)
+HGLS Statistics – stats on servers in real-time graphs and history, easy and powerful.
+
+![Preview](web/preview/v2.png)
 
 ## Install for Debian/Ubuntu/...
 Execute in console
-* Get code
+* Get code and install 
 ```bash
-cd ~ && git clone https://github.com/oxmix/highload-stats.git
-```
-* Install nodejs and sysutils
-```bash
-curl -sL https://deb.nodesource.com/setup_15.x | sudo -E bash - \
-&& sudo apt-get update && sudo apt-get install nodejs ifstat sysstat 
-```
-* Install node depends
-```bash
-cd ~/highload-stats/server && chmod +x server.js && npm i
-```
-* If need postgres, redis, mysql
-```bash
-sudo apt-get install redis-tools postgresql-client mysql-client
+cd ~ && git clone https://github.com/oxmix/highload-stats.git && cd ./highload-stats/server && bash ./install.sh
 ```
 
-* If need telemetry stats disks
-```bash
-sudo apt install smartmontools
-```
-
-## Run 
-* in console # `sudo ./server/server.js start` maybe also `stop|restart`
-* open in browser `http://remote.host.io:3939`
-
-## If need only through access by key
-* go to, console # `cd ~/highload-stats/server`
-* create file .access-key in folder ./server, console # `</dev/urandom | fold -w 32 | head -n 1 | sha256sum | awk '{print $1}' > .access-key`
-* now restart, console # `sudo ./server.js restart`
-* open in browser `http://remote.host.io:3939/-access-key-`, your -access-key- in file .access_key
-
-## If need get telemetry
-* open in browser or curl `http://remote.host.io:3939/telemetry` or `http://remote.host.io:3939/-access-key-/telemetry`
-
-## Debug 
-* back-end - run console `sudo ./server/server.js debug` or only `info|warn|error`
-* frond-end - `./web/external/common.js` => `debug: true`
-* also check logs maybe errors `tail -f ./server/hgls-error.log`
-
-## Settings autostart through systemd 
+## Settings autostart through systemd
 * run in console # `sudo ./systemd.sh`
-* then use `systemctl status hgls` 
+* then use `systemctl status hgls` or `journalctl -fu hgls`
+* open in browser [`http://remote.host.io:8039`](http://remote.host.io:8039) or [`http://127.0.0.1:8039`](http://127.0.0.1:8039)
 
-## Settings Proxy 
+## Required
+* Don't forget open firewall port 3939 for connection hgls-collectors
+* Or settings proxy through nginx
+
+## Install hgls-collector
+* Install and run collector for each server [https://github.com/oxmix/hgls-collector](https://github.com/oxmix/hgls-collector)
+
+### Run without systemd
+* in console # `./index.js start` maybe also `stop|restart|debug`
+* open in browser [`http://remote.host.io:8039`](http://remote.host.io:8039) or [`http://127.0.0.1:8039`](http://127.0.0.1:8039)
+* also check logs maybe errors `tail -f ./hgls-error.log`
+
+### If need get telemetry
+* open in browser or curl `http://remote.host.io:8939/telemetry`
+
+### Settings proxy
 Example for proxy nginx >= 1.3.13
 ```nginx
 server {
-    location /highload-stats/ {
-        proxy_pass http://remote.host.io:3939;
+    listen 80;
+    server_name remote.host.io;
+    
+    location / {
+        proxy_pass http://127.0.0.1:8039;
         proxy_http_version 1.1;
+        proxy_read_timeout 200s;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /collector {
+        proxy_pass http://127.0.0.1:3939;
+        proxy_http_version 1.1;
+        proxy_read_timeout 200s;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
-```
-## Setting access to MySql
-```bash
-echo '[client]
-      host=127.0.0.1
-      user=root-or-other
-      password=***pass***' >> /root/.my.cnf
-```
-
-## Setting PgBouncer
-```bash
-echo '"pgbouncer" ""' >> /etc/pgbouncer/userlist.txt && systemctl restart pgbouncer
-```
-
-## Enable stats for Nginx and FPM
-* Nginx add server
-```nginx
-server {
-    listen 80 default;
-    listen [::]:80 ipv6only=on;
-    server_name default;
-
-    location / {
-        return 444;
-    }
-
-    location /hgls-nginx {
-        stub_status on;
-        access_log off;
-        allow 127.0.0.1;
-        deny all;
-    }
-
-    location /hgls-fpm {
-        access_log off;
-        include /etc/nginx/fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        fastcgi_pass unix:/run/phpX.X-fpm.sock;
-        allow 127.0.0.1;
-        deny all;
-    }
-}
-```
-* FPM
-```bash
-sed -i 's/;pm.status_path = \/status/pm.status_path = \/hgls-fpm/' /etc/php/X.X/fpm/pool.d/www.conf
-```
-* Then
-```bash
-nginx -s reload && systemctl restart phpX.X-fpm
 ```

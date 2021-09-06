@@ -1,13 +1,14 @@
 {
 	"name": "hgls",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"private": true,
 	"description": "Highload-stats",
-	"main": "server.js",
+	"main": "index.js",
 	"keywords": [],
 	"author": "Oxmix",
 	"license": "ISC",
 	"dependencies": {
-		"ws": "^1.1.5"
+		"ws": "7.2.x",
+		"better-sqlite3": "7.4.x"
 	}
 }
