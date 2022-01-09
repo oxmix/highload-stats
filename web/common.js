@@ -1615,12 +1615,12 @@ $(function () {
 
 		if (event === 'space') {
 			var k = 0;
-			data[0].space.forEach(function (e) {
+			data[0].space.forEach(function (e, key) {
 				var used = [];
 				var free = [];
 				data.forEach(function (c) {
-					used.push([timeFormat(c.time), e[1]]);
-					free.push([timeFormat(c.time), e[2]]);
+					used.push([timeFormat(c.time), c.space[key][1]]);
+					free.push([timeFormat(c.time), c.space[key][2]]);
 				});
 				datasets.push({
 					label: 'used: ' + e[0],

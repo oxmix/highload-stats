@@ -97,9 +97,22 @@ const app = http.createServer(function (req, res) {
 			try {
 				const host = urlParams.get('host') || 'none';
 				const range = urlParams.get('range') || '-15 minute';
+				let group = '';
+				if (range !== '-15 minute' && range !== '-30 minute' && range !== '-1 hour') {
+					let grt = 30;
+					if (range === '-6 hour')
+						grt = 60;
+					if (range === '-12 hour')
+						grt = 120;
+					if (range === '-24 hour')
+						grt = 240;
+					group = `GROUP BY datetime((strftime('%s', time) / ${grt}) * ${grt}, 'unixepoch'), event`;
+				}
+
 				const rows = db.prepare(`SELECT json
 										 FROM history
 										 WHERE time > datetime('now', ?) AND host = ?
+										 ${group}
 										 ORDER BY time ASC`)
 					.all(range, host).map(e => JSON.parse(e.json));
 
