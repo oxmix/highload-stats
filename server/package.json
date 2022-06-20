@@ -8,7 +8,7 @@
 	"author": "Oxmix",
 	"license": "ISC",
 	"dependencies": {
-		"ws": "7.2.x",
+		"ws": "7.4.x",
 		"better-sqlite3": "7.4.x"
 	}
 }
