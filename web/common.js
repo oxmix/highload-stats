@@ -271,7 +271,9 @@ var hgls = (function () {
 		}
 
 		if (data.event === 'docker-mem') {
-			chart.data.datasets[0].data = Object.values(data.docker).map((e) => e[1]);
+			Object.keys(data.docker).forEach(function (name, k) {
+				chart.data.datasets[k].data = [data.docker[name][1]];
+			});
 			chart.update();
 		}
 
