@@ -263,8 +263,13 @@ var hgls = (function () {
 		}
 
 		if (data.event === 'docker-cpu') {
-			Object.keys(data.docker).forEach(function (name, k) {
-				chart.data.datasets[k].data.push([timeFormat(data.time), data.docker[name][0]]);
+			Object.keys(chart.data.datasets).forEach(function (k) {
+				var label = chart.data.datasets[k].label;
+				var val = 0;
+				if (label in data.docker)
+					val = data.docker[label][0];
+
+				chart.data.datasets[k].data.push([timeFormat(data.time), val]);
 			});
 			chart.update();
 			chartCutting(chart);
