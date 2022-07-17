@@ -1,19 +1,22 @@
 # highload-stats
+[![CI Status](https://github.com/oxmix/highload-stats/workflows/Build%20and%20publish/badge.svg)](https://github.com/oxmix/hgls-collector/actions/workflows/hub-docker.yaml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/oxmix/highload-stats.svg?logo=docker)](https://hub.docker.com/r/tonistiigi/binfmt/)
+
 HGLS Statistics – stats on servers in real-time graphs and history, easy and powerful.
 
 ![Preview](web/preview/v2.png)
 
-## Install for Debian/Ubuntu/...
-Execute in console
-* Get code and install 
+## Run docker container
+* Execute in the console
 ```bash
-cd ~ && git clone https://github.com/oxmix/highload-stats.git && cd ./highload-stats/server && bash ./install.sh
+$ docker run -d --name highload-stats \
+  --restart always --log-opt max-size=5m \
+  -v /var/lib/hgls:/app/db \
+  -p 127.0.0.1:8039:8039 \
+  -p 127.0.0.1:3939:3939 \
+oxmix/highload-stats:2
 ```
-
-## Settings autostart through systemd
-* run in console # `sudo ./systemd.sh`
-* then use `systemctl status hgls` or `journalctl -fu hgls`
-* open in browser [`http://remote.host.io:8039`](http://remote.host.io:8039) or [`http://127.0.0.1:8039`](http://127.0.0.1:8039)
+* open in browser [`http://127.0.0.1:8039`](http://127.0.0.1:8039) or [`http://remote.host.io:8039`](http://remote.host.io:8039)
 
 ## Required
 * Don't forget open firewall port 3939 for connection hgls-collectors
@@ -22,13 +25,8 @@ cd ~ && git clone https://github.com/oxmix/highload-stats.git && cd ./highload-s
 ## Install hgls-collector
 * Install and run collector for each server [https://github.com/oxmix/hgls-collector](https://github.com/oxmix/hgls-collector)
 
-### Run without systemd
-* in console # `./index.js start` maybe also `stop|restart|debug`
-* open in browser [`http://remote.host.io:8039`](http://remote.host.io:8039) or [`http://127.0.0.1:8039`](http://127.0.0.1:8039)
-* also check logs maybe errors `tail -f ./hgls-error.log`
-
-### If need get telemetry
-* open in browser or curl `http://remote.host.io:8939/telemetry`
+### If you need get telemetry
+* open in browser or curl `http://127.0.0.1:8039/telemetry`
 
 ### Settings proxy
 Example for proxy nginx >= 1.3.13
@@ -44,7 +42,6 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
     location /collector {
@@ -54,7 +51,28 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
+```
+
+### Run without container
+* in console `$ npm i` and `$ ./index.js start` maybe also `stop|restart|debug`
+* open in browser [`http://127.0.0.1:8039`](http://127.0.0.1:8039) or [`http://remote.host.io:8039`](http://remote.host.io:8039)
+
+### Deployment manifest for [container-ship](https://github.com/oxmix/container-ship)
+```yaml
+space: hgls
+name: highload-stats-deployment
+nodes:
+  - localhost
+containers:
+  - name: highload-stats
+    from: oxmix/highload-stats:2
+    restart: always
+    log-opt: max-size=5m
+    ports:
+      - 127.0.0.1:8039:8039
+      - 127.0.0.1:3939:3939
+    volumes:
+      - /var/lib/hgls:/app/db
 ```

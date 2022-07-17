@@ -1,5 +1,4 @@
 const
-	config = require('./config'),
 	helpers = require('./helpers'),
 	ws = require('ws'),
 	http = require('http');
@@ -12,21 +11,17 @@ module.exports.start = (function (call) {
 	const app = http.createServer(function (req, res) {
 		res.writeHead(403);
 		res.end('hgls-collector: 403');
-	}).listen(config.collector.port, config.collector.host);
+	}).listen(3939, () => {
+		helpers.log('info', '[collector] server started at :3939');
+	});
 
 	let wss = new ws.Server({server: app});
 	wss.on('connection', function (ws, req) {
 		let remoteAddress = ws._socket.remoteAddress;
-		if ('x-forwarded-for' in req.headers)
-			remoteAddress = req.headers['x-forwarded-for'].split(/\s*,\s*/)[0];
+		if ('x-real-ip' in req.headers)
+			remoteAddress = req.headers['x-real-ip'].split(/\s*,\s*/)[0];
 
 		helpers.log('info', '[collector] new connect, ip: ' + remoteAddress);
-
-		if (config.collector.allowIps.indexOf(remoteAddress) === -1) {
-			helpers.log('error', '[collector] access deny, ip: ' + remoteAddress);
-			ws.close();
-			return;
-		}
 
 		ws.hgls = {
 			pong: (new Date).getTime(),
@@ -69,6 +64,4 @@ module.exports.start = (function (call) {
 			helpers.log('error', '[collector] ' + error);
 		});
 	});
-
-	helpers.log('info', '[collector] server start: ' + config.collector.host + ':' + config.collector.port);
 });

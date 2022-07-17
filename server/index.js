@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const
-	config = require('./config'),
 	helpers = require('./helpers'),
 	ws = require('ws'),
 	collector = require('./collector'),
@@ -38,8 +37,8 @@ switch (process.argv[2]) {
 
 process.title = processName;
 
-
-const db = new Sqlite(__dirname + '/history.db');
+const fHistoryDB = '/app/db/history.db';
+const db = new Sqlite(fHistoryDB);
 db.exec('CREATE TABLE IF NOT EXISTS history (time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,' +
 	' host VARCHAR (100), event VARCHAR (100), json TEXT)');
 db.exec('CREATE INDEX IF NOT EXISTS history_time_index ON history (time desc)');
@@ -111,8 +110,7 @@ const app = http.createServer(function (req, res) {
 
 				const rows = db.prepare(`SELECT json
 										 FROM history
-										 WHERE time > datetime('now', ?) AND host = ?
-										 ${group}
+										 WHERE time > datetime('now', ?) AND host = ? ${group}
 										 ORDER BY time ASC`)
 					.all(range, host).map(e => JSON.parse(e.json));
 
@@ -233,15 +231,17 @@ const app = http.createServer(function (req, res) {
 
 	res.writeHead(200);
 	(fs.createReadStream(path)).pipe(res);
-}).listen(config.web.port, config.web.host);
+}).listen(8039, () => {
+	helpers.log('info', '[hgls] server started at :8039, pid: ' + process.pid);
+});
 
 let subscribers = {};
 let unique = 0;
 const wss = new ws.Server({server: app});
 wss.on('connection', function (ws, req) {
 	let remoteAddress = ws._socket.remoteAddress;
-	if ('x-forwarded-for' in req.headers)
-		remoteAddress = req.headers['x-forwarded-for'].split(/\s*,\s*/)[0];
+	if ('x-real-ip' in req.headers)
+		remoteAddress = req.headers['x-real-ip'].split(/\s*,\s*/)[0];
 
 	helpers.log('info', '[ws] new connect: ' + remoteAddress);
 
@@ -328,8 +328,6 @@ wss.on('connection', function (ws, req) {
 		helpers.log('error', '[ws] error: ' + error);
 	});
 });
-
-helpers.log('info', '[hgls] server start: ' + config.web.host + ':' + config.web.port + ' pid: ' + process.pid);
 
 /**
  * Send message
@@ -439,7 +437,7 @@ let historySize = 0;
 let historyQuantity = 0;
 let historyStats = function () {
 	historyQuantity = db.prepare('SELECT COUNT(*) AS count FROM history').get().count;
-	historySize = fs.statSync(__dirname + '/history.db').size;
+	historySize = fs.statSync(fHistoryDB).size;
 };
 let historyTrim = function () {
 	if (historyQuantity > 0) {
