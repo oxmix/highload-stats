@@ -1,6 +1,5 @@
 # highload-stats
-[![CI Status](https://github.com/oxmix/highload-stats/workflows/Build%20and%20publish/badge.svg)](https://github.com/oxmix/hgls-collector/actions/workflows/hub-docker.yaml)
-[![Docker Pulls](https://img.shields.io/docker/pulls/oxmix/highload-stats.svg?logo=docker)](https://hub.docker.com/r/tonistiigi/binfmt/)
+[![CI Status](https://github.com/oxmix/highload-stats/workflows/Build%20and%20publish/badge.svg)](https://github.com/oxmix/highload-stats/actions/workflows/hub-docker.yaml)
 
 HGLS Statistics – stats on servers in real-time graphs and history, easy and powerful.
 
@@ -11,22 +10,24 @@ HGLS Statistics – stats on servers in real-time graphs and history, easy and p
 ```bash
 $ docker run -d --name highload-stats \
   --restart always --log-opt max-size=5m \
-  -v /var/lib/hgls:/app/db \
   -p 127.0.0.1:8039:8039 \
   -p 127.0.0.1:3939:3939 \
 oxmix/highload-stats:2
 ```
-* open in browser [`http://127.0.0.1:8039`](http://127.0.0.1:8039) or [`http://remote.host.io:8039`](http://remote.host.io:8039)
+* Open in browser [`http://127.0.0.1:8039`](http://127.0.0.1:8039) or [`http://remote.host.io:8039`](http://remote.host.io:8039)
+
+## Install hgls-collector
+* Run collector for each server [https://github.com/oxmix/hgls-collector](https://github.com/oxmix/hgls-collector)
 
 ## Required
 * Don't forget open firewall port 3939 for connection hgls-collectors
 * Or settings proxy through nginx
 
-## Install hgls-collector
-* Install and run collector for each server [https://github.com/oxmix/hgls-collector](https://github.com/oxmix/hgls-collector)
+### Get telemetry of connections
+* Endpoint [`http://127.0.0.1:8039/telemetry`](http://127.0.0.1:8039/telemetry)
 
-### If you need get telemetry
-* open in browser or curl `http://127.0.0.1:8039/telemetry`
+### Use external sqlite files
+* Just add volume `docker run ... -v /var/lib/hgls:/app/db`
 
 ### Settings proxy
 Example for proxy nginx >= 1.3.13
@@ -56,8 +57,8 @@ server {
 ```
 
 ### Run without container
-* in console `$ npm i` and `$ ./index.js start` maybe also `stop|restart|debug`
-* open in browser [`http://127.0.0.1:8039`](http://127.0.0.1:8039) or [`http://remote.host.io:8039`](http://remote.host.io:8039)
+* In console `$ npm i` and `$ ./index.js start` maybe also `stop|restart|debug`
+* Open in browser [`http://127.0.0.1:8039`](http://127.0.0.1:8039) or [`http://remote.host.io:8039`](http://remote.host.io:8039)
 
 ### Deployment manifest for [container-ship](https://github.com/oxmix/container-ship)
 ```yaml
